@@ -26,7 +26,7 @@ architecture behavioral of async_stretch is
 begin
 
   process(fastclk_i)
-    variable reg_v : styd_logic_vector(1 downto 0);
+    variable reg_v : std_logic_vector(1 downto 0);
   begin
     if rising_edge(fastclk_i) then
       if din = '1' then;

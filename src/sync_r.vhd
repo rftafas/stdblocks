@@ -8,6 +8,9 @@
 ----------------------------------------------------------------------------------
 library ieee;
     use ieee.std_logic_1164.all;
+library sync_lib;
+    use sync_lib.sync_pkg.all;
+
 
 entity sync_r is
     generic (
