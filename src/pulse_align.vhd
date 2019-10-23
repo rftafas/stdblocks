@@ -39,7 +39,7 @@ architecture behavioral of pulse_align is
           end if;
 
         when wait_others =>
-          if status = (others => '1') then
+          if status = (status'range => '1') then
             return active;
           end if;
 
@@ -67,7 +67,7 @@ architecture behavioral of pulse_align is
         when active =>
           return '1';
 
-        when others      =>
+        when others =>
           return '0';
 
       end case;
@@ -75,10 +75,12 @@ architecture behavioral of pulse_align is
 
 begin
 
-  process(mclk_i)
-    variable status_v : std_logic_vector(en_i'range);
+  process(mclk_i, rst_i)
+    variable status_v : std_logic_vector(en_i'range) := (others=>'0');
   begin
-    if rising_edge(mclk_i) then
+    if rst_i = '1' then
+      mq_align <= (others=>idle);
+    elsif rising_edge(mclk_i) then
       for j in en_i'range loop
         status_v(j) := decode_status(mq_align(j))
       end loop;

@@ -28,10 +28,10 @@ architecture behavioral of sync_r is
 
 begin
 
-    process(mclk_i)
+    process(mclk_i,rst_i)
       variable reg_v : std_logic_vector(stages-1 downto 0) := (others=>'0');
     begin
-      if arst_i = '0' then
+      if rst_i = '0' then
         reg_v := (others => '0');
         dout  <= '0';
       elsif rising_edge(mclk_i) then
