@@ -10,6 +10,9 @@ library expert;
 
 
 entity tdp_ram is
+    generic (
+      ram_type : mem_t := "block"
+    );
     port (
       --general
       clka_i   : in  std_logic;
@@ -34,8 +37,10 @@ end tdp_ram;
 architecture behavioral of tdp_ram is
 
   constant ram_size : integer := 2**addra_i'length;
-  type ram_t  is array (ram_size-1 downto 0) of std_logic_vector(dataa_i'range);
-  shared variable ram_data_v : std_logic_vector(ram_size-1 downto 0) := (others=>(others=>'0'));
+  type ram_data_t  is array (ram_size-1 downto 0) of std_logic_vector(dataa_i'range);
+  shared variable ram_data_v : ram_data_t(ram_size-1 downto 0) := (others=>(others=>'0'));
+
+  attribute ram_style of ram_data_v : shared variable is ram_type;
 
 begin
 

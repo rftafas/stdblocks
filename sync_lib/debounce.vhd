@@ -5,13 +5,15 @@
 -- Submit any suggestions to GITHUB ticket system.
 ----------------------------------------------------------------------------------
 library ieee;
-    use ieee.std_logic_1164.all;
+  use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
 
 entity debounce is
     port (
-        mclk_i  : in  std_logic;
-        din     : in  std_logic_vector;
-        dout    : out std_logic_vector
+      rst_i  : in  std_logic;
+      mclk_i  : in  std_logic;
+      din     : in  std_logic_vector;
+      dout    : out std_logic_vector
     );
 end debounce;
 
@@ -19,14 +21,27 @@ architecture behavioral of debounce is
 
 begin
 
-    process(mclk_i)
-      variable reg_v : std_logic_vector(15 downto 0);
+    process(mclk_i, rst_i)
+      variable reg_v : unsigned(4 downto 0);
     begin
-      if rising_edge(mclk_i) then
-        reg_v(15 downto 0) := reg_v(14 downto 0) & ( din nand reg_v(15) );
+      if rst_i = '1' then
+        dout  <= '0';
+        reg_v := (others=>'0');
+      elsif rising_edge(mclk_i) then
+        if din = '0' then
+          if reg_v > 0 then
+            reg_v := reg_v - 1;
+          else
+            dout <= '0';
+          end if;
+        else
+          if reg_v < (reg_v'range => '1') then
+            reg_v := reg_v + 1;
+          else
+            dout <= '1';
+          end if;
+        end if;
       end if;
      end process;
-
-     dout <= reg_v(15);
 
 end behavioral;
