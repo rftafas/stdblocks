@@ -26,10 +26,8 @@ entity dp_ram is
       datab_o  : out std_logic_vector;
       ena_i    : in  std_logic;
       enb_i    : in  std_logic;
-      oea_i    : in  std_logic;
       oeb_i    : in  std_logic;
-      wea_i    : in  std_logic;
-      web_i    : in  std_logic
+      wea_i    : in  std_logic
     );
 end dp_ram;
 
