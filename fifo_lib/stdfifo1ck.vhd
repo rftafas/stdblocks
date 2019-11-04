@@ -13,7 +13,7 @@ library stdblocks;
 entity stdfifo2ck is
     generic (
       ram_type : mem_t := "block";
-      fifo_size : integer := 8;
+      fifo_size : integer := 8
     );
     port (
       --general
@@ -34,11 +34,11 @@ architecture behavioral of stdfifo2ck is
 
   constant fifo_length : integer := 2**fifo_size;
 
-  constant full_c     : gray_vector := to_gray_vector(   fifo_length-1,fifo_size);
-  constant go_full_c  : gray_vector := to_gray_vector(fifo_length*9/10,fifo_size);
-  constant steady_c   : gray_vector := to_gray_vector(fifo_length*5/10,fifo_size);
-  constant go_empty_c : gray_vector := to_gray_vector(fifo_length*1/10,fifo_size);
-  constant empty_c    : gray_vector := to_gray_vector(               0,fifo_size);
+  constant full_c     : integer :=    fifo_length-1;
+  constant go_full_c  : integer := fifo_length*9/10;
+  constant steady_c   : integer := fifo_length*5/10;
+  constant go_empty_c : integer := fifo_length*1/10;
+  constant empty_c    : integer :=                0;
 
 begin
 
@@ -58,7 +58,7 @@ begin
   begin
     if rst_i = '1' then
     elsif clk_i'event and clk_i = '1' then
-      if ena_i = '1' then
+      if enb_i = '1' then
         addro_cnt    <= addro_cnt + 1;
       end if;
     end if;

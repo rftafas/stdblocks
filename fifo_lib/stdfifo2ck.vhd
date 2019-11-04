@@ -63,7 +63,7 @@ begin
   begin
     if rstb_i = '1' then
     elsif clkb_i'event and clkb_i = '1' then
-      if ena_i = '1' then
+      if enb_i = '1' then
         addro_cnt    <= addro_cnt + 1;
       end if;
     end if;
