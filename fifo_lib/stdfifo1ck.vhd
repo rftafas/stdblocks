@@ -10,24 +10,32 @@ library expert;
 library stdblocks;
     use stdblocks.ram_lib.all;
 
-entity stdfifo2ck is
+entity stdfifo1ck is
     generic (
       ram_type : mem_t := "block";
       fifo_size : integer := 8
     );
     port (
       --general
-      clk_i    : in  std_logic;
-      rst_i    : in  std_logic;
-      dataa_i  : in  std_logic_vector;
-      datab_o  : out std_logic_vector;
-      ena_i    : in  std_logic;
-      enb_i    : in  std_logic;
-      oeb_i    : in  std_logic
+      clk_i       : in  std_logic;
+      rst_i       : in  std_logic;
+      dataa_i     : in  std_logic_vector;
+      datab_o     : out std_logic_vector;
+      ena_i       : in  std_logic;
+      enb_i       : in  std_logic;
+      oeb_i       : in  std_logic;
+      --
+      overflow_o  : in  std_logic;
+      full_o      : in  std_logic;
+      gofull_o    : in  std_logic;
+      steady_o    : in  std_logic;
+      goempty_o   : in  std_logic;
+      empty_o     : in  std_logic;
+      underflow_o : in  std_logic
     );
-end stdfifo2ck;
+end stdfifo1ck;
 
-architecture behavioral of stdfifo2ck is
+architecture behavioral of stdfifo1ck is
 
   signal addri_cnt   : std_logic_vector(fifo_size-1 downto 0);
   signal addro_cnt   : std_logic_vector(fifo_size-1 downto 0);

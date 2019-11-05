@@ -12,19 +12,27 @@ library stdblocks;
 
 entity srfifo1ck is
     generic (
-      fifo_size : integer := 8;
+      fifo_size : integer := 8
     );
     port (
       --general
-      clka_i   : in  std_logic;
-      rsta_i   : in  std_logic;
-      clkb_i   : in  std_logic;
-      rstb_i   : in  std_logic;
-      dataa_i  : in  std_logic_vector;
-      datab_o  : out std_logic_vector;
-      ena_i    : in  std_logic;
-      enb_i    : in  std_logic;
-      oeb_i    : in  std_logic
+      clka_i      : in  std_logic;
+      rsta_i      : in  std_logic;
+      clkb_i      : in  std_logic;
+      rstb_i      : in  std_logic;
+      dataa_i     : in  std_logic_vector;
+      datab_o     : out std_logic_vector;
+      ena_i       : in  std_logic;
+      enb_i       : in  std_logic;
+      oeb_i       : in  std_logic;
+      --
+      overflow_o  : in  std_logic;
+      full_o      : in  std_logic;
+      gofull_o    : in  std_logic;
+      steady_o    : in  std_logic;
+      goempty_o   : in  std_logic;
+      empty_o     : in  std_logic;
+      underflow_o : in  std_logic
     );
 end srfifo1ck;
 

@@ -13,37 +13,56 @@ library stdblocks;
 entity stdfifo2ck is
     generic (
       ram_type : mem_t := "block";
-      fifo_size : integer := 8;
+      fifo_size : integer := 8
     );
     port (
       --general
-      clka_i   : in  std_logic;
-      rsta_i   : in  std_logic;
-      clkb_i   : in  std_logic;
-      rstb_i   : in  std_logic;
-      dataa_i  : in  std_logic_vector;
-      datab_o  : out std_logic_vector;
-      ena_i    : in  std_logic;
-      enb_i    : in  std_logic;
-      oeb_i    : in  std_logic
+      clka_i       : in  std_logic;
+      rsta_i       : in  std_logic;
+      clkb_i       : in  std_logic;
+      rstb_i       : in  std_logic;
+      dataa_i      : in  std_logic_vector;
+      datab_o      : out std_logic_vector;
+      ena_i        : in  std_logic;
+      enb_i        : in  std_logic;
+      oeb_i        : in  std_logic;
+      --status_port_a
+      overflowa_o  : in  std_logic;
+      fulla_o      : in  std_logic;
+      gofulla_o    : in  std_logic;
+      steadya_o    : in  std_logic;
+      goemptya_o   : in  std_logic;
+      emptya_o     : in  std_logic;
+      underflowa_o : in  std_logic;
+      --status_port_b
+      overflowb_o  : in  std_logic;
+      fullb_o      : in  std_logic;
+      gofullb_o    : in  std_logic;
+      steadyb_o    : in  std_logic;
+      goemptyb_o   : in  std_logic;
+      emptyb_o     : in  std_logic;
+      underflowb_o : in  std_logic
     );
 end stdfifo2ck;
 
 architecture behavioral of stdfifo2ck is
 
-  signal addri_cnt   : gray_vector(fifo_size-1 downto 0);
-  signal addro_cnt   : gray_vector(fifo_size-1 downto 0);
+  signal addri_cnt     : gray_vector(fifo_size-1 downto 0);
+  signal addro_cnt     : gray_vector(fifo_size-1 downto 0);
 
-  signal addri_cnt_s : gray_vector(fifo_size-1 downto 0);
-  signal addro_cnt_s : gray_vector(fifo_size-1 downto 0);
+  signal addri_cnt_s   : gray_vector(fifo_size-1 downto 0);
+  signal addro_cnt_s   : gray_vector(fifo_size-1 downto 0);
 
   constant fifo_length : integer := 2**fifo_size;
 
-  constant full_c     : gray_vector := to_gray_vector(   fifo_length-1,fifo_size);
-  constant go_full_c  : gray_vector := to_gray_vector(fifo_length*9/10,fifo_size);
-  constant steady_c   : gray_vector := to_gray_vector(fifo_length*5/10,fifo_size);
-  constant go_empty_c : gray_vector := to_gray_vector(fifo_length*1/10,fifo_size);
-  constant empty_c    : gray_vector := to_gray_vector(               0,fifo_size);
+  constant full_c      : gray_vector := to_gray_vector(   fifo_length-1,fifo_size);
+  constant go_full_c   : gray_vector := to_gray_vector(fifo_length*9/10,fifo_size);
+  constant steady_c    : gray_vector := to_gray_vector(fifo_length*5/10,fifo_size);
+  constant go_empty_c  : gray_vector := to_gray_vector(fifo_length*1/10,fifo_size);
+  constant empty_c     : gray_vector := to_gray_vector(               0,fifo_size);
+
+  signal enb_i_s       : std_logic;
+  signal ena_i_s       : std_logic;
 
 begin
 
@@ -125,8 +144,48 @@ begin
       datab_o => datab_o,
       ena_i   => ena_i,
       enb_i   => enb_i,
-      oeb_i   => oeb_i,
+      oeb_i   => oeb_i
     );
 
+    --mudar para stretch para garantir que enables rpápidos sejam
+    --capturados por clocks lentos.
+    sync_ena : sync_r
+      generic map (
+        stages => 1
+      )
+      port map (
+        mclk_i => clkb_i,
+        rst_i  => '0',
+        din    => ena_i,
+        dout   => ena_i_s
+      );
+
+    sync_enb : sync_r
+      generic map (
+        stages => 1
+      )
+      port map (
+        mclk_i => clka_i,
+        rst_i  => '0',
+        din    => enb_i,
+        dout   => enb_i_s
+      );
+
+    --
+    overflowa_o  <= full_a_s and ena_i;
+    fulla_o      <= full_a_s;
+    gofulla_o    <= gofull_a_s;
+    steadya_o    <= steady_a_s;
+    goemptya_o   <= go_empty_a_s;
+    emptya_o     <= empty_a_s;
+    underflowa_o <= empty_a_s and enb_i_s;
+    --
+    overflowb_o  <= full_b_s and ena_i_s;
+    fullb_o      <= full_b_s;
+    gofullb_o    <= gofull_b_s;
+    steadyb_o    <= steady_b_s;
+    goemptyb_o   <= go_empty_b_s;
+    emptyb_o     <= empty_b_s;
+    underflowb_o <= empty_b_s and enb_i;
 
 end behavioral;
