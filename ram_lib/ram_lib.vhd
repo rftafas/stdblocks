@@ -3,7 +3,7 @@ library IEEE;
 
 package ram_lib is
 
-  type mem_t is ("block", "ultra", "registers", "distributed");
+  type mem_t is (blockram, ultra, registers, distributed);
   attribute ram_style : string;
 
   component tdp_ram

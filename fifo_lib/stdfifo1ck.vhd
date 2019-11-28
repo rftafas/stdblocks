@@ -12,7 +12,7 @@ library stdblocks;
 
 entity stdfifo1ck is
     generic (
-      ram_type : mem_t := "block";
+      ram_type  : mem_t := blockram;
       fifo_size : integer := 8
     );
     port (
