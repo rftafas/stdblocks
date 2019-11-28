@@ -11,10 +11,10 @@ library sync_lib;
 
 entity det_up is
     port (
-        mclk_i  : in  std_logic;
-        rst_i   : in  std_logic;
-        din     : in  std_logic;
-        dout    : out std_logic
+      rst_i   : in  std_logic;
+      mclk_i  : in  std_logic;
+      din     : in  std_logic;
+      dout    : out std_logic
     );
 end det_up;
 

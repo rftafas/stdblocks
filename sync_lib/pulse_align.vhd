@@ -6,8 +6,8 @@
 ----------------------------------------------------------------------------------
 library ieee;
     use ieee.std_logic_1164.all;
-library sync_lib;
-    use sync_lib.sync_pkg.all;
+library stdblocks;
+    use stdblocks.sync_pkg.all;
 
 
 entity pulse_align is
@@ -26,13 +26,13 @@ architecture behavioral of pulse_align is
   type fsm_vector_t is array (en_i'range) of align_t;
   signal mq_align : fsm_vector_t;
 
-  function next_state_logic(
+  function next_state_logic (
     enable : std_logic,
     status : std_logic_vector(en_i'range),
     current_state : align_t
     ) return align_t is
-    begin
-      case current_state is
+  begin
+    case current_state is
         when idle        =>
           if enable = '1' then
             return wait_others;

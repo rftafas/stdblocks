@@ -3,7 +3,7 @@ library IEEE;
   use IEEE.NUMERIC_STD.ALL;
   use IEEE.math_real.all;
 
-package sync_pkg is
+package sync_lib is
 
   component sync_r
     generic (
@@ -38,6 +38,6 @@ package sync_pkg is
 
 end package;
 
-package body sync_pkg is
+package body sync_lib is
 
 end package body;

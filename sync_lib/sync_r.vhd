@@ -14,14 +14,14 @@ library sync_lib;
 
 entity sync_r is
     generic (
-            stages  : integer := 2
+      stages  : integer := 2
     );
     port (
-        mclk_i  : in  std_logic;
-        rst_i   : in  std_logic;
-        din     : in  std_logic;
-        dout    : out std_logic;
-        );
+      rst_i   : in  std_logic;
+      mclk_i  : in  std_logic;
+      din     : in  std_logic;
+      dout    : out std_logic
+    );
 end sync_r;
 
 architecture behavioral of sync_r is

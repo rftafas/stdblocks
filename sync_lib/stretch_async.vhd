@@ -29,17 +29,17 @@ begin
     variable reg_v : std_logic_vector(1 downto 0);
   begin
     if rising_edge(fastclk_i) then
-      if din = '1' then;
-        reg_forward_s := '1';
+      if din = '1' then
+        reg_forward_s <= '1';
       elsif reg_v(1) = '1' then
-        reg_forward_s := '0';
+        reg_forward_s <= '0';
       end if;
       reg_v := reg_v(0) & reg_back_s;
     end if;
   end process;
 
   process(slowclk_i)
-    variable reg_v : styd_logic_vector(1 downto 0);
+    variable reg_v : std_logic_vector(1 downto 0);
   begin
     if rising_edge(slowclk_i) then
       if reg_v(1) = '1' then
