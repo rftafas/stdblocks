@@ -6,13 +6,14 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 library expert;
-    use expert.std_logic_gray.all;
+    use expert.std_logic_expert.all;
 library stdblocks;
     use stdblocks.ram_lib.all;
 
 entity stdfifo1ck is
     generic (
       ram_type  : mem_t := blockram;
+      port_size : integer := 8;
       fifo_size : integer := 8
     );
     port (
@@ -25,13 +26,13 @@ entity stdfifo1ck is
       enb_i       : in  std_logic;
       oeb_i       : in  std_logic;
       --
-      overflow_o  : in  std_logic;
-      full_o      : in  std_logic;
-      gofull_o    : in  std_logic;
-      steady_o    : in  std_logic;
-      goempty_o   : in  std_logic;
-      empty_o     : in  std_logic;
-      underflow_o : in  std_logic
+      overflow_o  : out std_logic;
+      full_o      : out std_logic;
+      gofull_o    : out std_logic;
+      steady_o    : out std_logic;
+      goempty_o   : out std_logic;
+      empty_o     : out std_logic;
+      underflow_o : out std_logic
     );
 end stdfifo1ck;
 
@@ -47,6 +48,7 @@ architecture behavioral of stdfifo1ck is
   constant steady_c   : integer := fifo_length*5/10;
   constant go_empty_c : integer := fifo_length*1/10;
   constant empty_c    : integer :=                0;
+
 
 begin
 
@@ -74,13 +76,13 @@ begin
 
 
   --Fifo state decode. must be optmized for state machine in the future.
-  full_s     <= '1' when addro_cnt - addri_cnt = full_c    else '0';
-  gofull_s   <= '1' when addro_cnt - addri_cnt > go_full_c else '0';
-  steady_s   <= '1' when (full_s or gofull_s or go_empty_s or empty_s) = '0' else '0';
-  go_empty_s <= '1' when addro_cnt - addri_cnt < go_full_c else '0';
-  empty_s    <= '1' when addro_cnt - addri_cnt = empty_c   else '0';
+  full_o     <= '1' when addro_cnt = full_c     else '0';
+  gofull_o   <= '1' when addro_cnt > go_full_c  else '0';
+  steady_o   <= '1' when addro_cnt < go_full_c and addro_cnt > go_empty_c else '0';
+  go_empty_o <= '1' when addro_cnt < go_empty_c else '0';
+  empty_o    <= '1' when addro_cnt = empty_c    else '0';
 
-  dp_ram_i : dp_ram
+  dp_ram_u : dp_ram
     generic map (
       ram_type => ram_type
     )
@@ -95,7 +97,7 @@ begin
       datab_o => datab_o,
       ena_i   => ena_i,
       enb_i   => enb_i,
-      oeb_i   => oeb_i,
+      oeb_i   => oeb_i
     );
 
 

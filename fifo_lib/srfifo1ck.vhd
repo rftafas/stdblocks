@@ -12,7 +12,8 @@ library stdblocks;
 
 entity srfifo1ck is
     generic (
-      fifo_size : integer := 8
+      fifo_size : integer := 8;
+      port_size : integer := 8
     );
     port (
       --general
@@ -20,19 +21,19 @@ entity srfifo1ck is
       rsta_i      : in  std_logic;
       clkb_i      : in  std_logic;
       rstb_i      : in  std_logic;
-      dataa_i     : in  std_logic_vector;
-      datab_o     : out std_logic_vector;
+      dataa_i     : in  std_logic_vector(port_size-1 downto 0);
+      datab_o     : out std_logic_vector(port_size-1 downto 0);
       ena_i       : in  std_logic;
       enb_i       : in  std_logic;
       oeb_i       : in  std_logic;
       --
-      overflow_o  : in  std_logic;
-      full_o      : in  std_logic;
-      gofull_o    : in  std_logic;
-      steady_o    : in  std_logic;
-      goempty_o   : in  std_logic;
-      empty_o     : in  std_logic;
-      underflow_o : in  std_logic
+      overflow_o  : out std_logic;
+      full_o      : out std_logic;
+      gofull_o    : out std_logic;
+      steady_o    : out std_logic;
+      goempty_o   : out std_logic;
+      empty_o     : out std_logic;
+      underflow_o : out std_logic
     );
 end srfifo1ck;
 
@@ -40,14 +41,10 @@ architecture behavioral of srfifo1ck is
 
   constant fifo_length : integer := 2**fifo_size;
 
-  signal addro_cnt     : integer rante -1 to fifo_length-1;
-  signal data_sr       : std_logic_vector(fifo_length-1 downto 0) := (others=>'0');
+  signal addro_cnt     : integer range -1 to fifo_length-1;
 
-  constant full_c      : integer :=    fifo_length-1;
-  constant go_full_c   : integer := fifo_length*9/10;
-  constant steady_c    : integer := fifo_length*5/10;
-  constant go_empty_c  : integer := fifo_length*1/10;
-  constant empty_c     : integer :=                0;
+  type srmem_t is array (fifo_length-1 downto 0) of std_logic_vector(port_size-1 downto 0);
+  signal data_sr       : srmem_t := (others=>(others=>'0'));
 
 begin
 
@@ -59,7 +56,7 @@ begin
     elsif clka_i'event and clka_i = '1' then
       if ena_i = '1' then
         data_sr(0) <= dataa_i;
-        data_sr(data_sr'high downto 1) <= data_sr(data_sr'high-1 downto 0)
+        data_sr(data_sr'high downto 1) <= data_sr(data_sr'high-1 downto 0);
       end if;
     end if;
   end process;
@@ -83,12 +80,12 @@ begin
   end process;
 
   dout_p : process(clkb_i, rstb_i)
-    variable tmp_add : integer := 0
+    variable tmp_add : integer := 0;
   begin
     if rstb_i = '1' then
     elsif clkb_i'event and clkb_i = '1' then
       if addro_cnt > -1 and addro_cnt < fifo_length-1 then
-        datab_o <= (addro_cnt);
+        datab_o <= data_sr(addro_cnt);
       else
         datab_o <= (others=>'0');
       end if;
@@ -96,18 +93,12 @@ begin
   end process;
 
   --Fifo state decode. must be optmized for state machine in the future.
-  --input
-  full_a_s     <= '1' when addro_cnt = full_c    else '0';
-  gofull_a_s   <= '1' when addro_cnt > go_full_c else '0';
-  steady_a_s   <= '1' when (full_a_s or gofull_a_s or go_empty_a_s or empty_a_s) = '0' else '0';
-  go_empty_a_s <= '1' when addro_cnt < go_full_c else '0';
-  empty_a_s    <= '1' when addro_cnt = empty_c   else '0';
-  --output
-  full_b_s     <= '1' when addro_cnt - addri_cnt_s = full_c    else '0';
-  gofull_b_s   <= '1' when addro_cnt - addri_cnt_s > go_full_c else '0';
-  steady_b_s   <= '1' when (full_b_s or gofull_b_s or go_empty_b_s or empty_b_s) = '0' else '0';
-  go_empty_b_s <= '1' when addro_cnt - addri_cnt_s < go_full_c else '0';
-  empty_b_s    <= '1' when addro_cnt - addri_cnt_s = empty_c   else '0';
+  full_o     <= '1' when addro_cnt = full_c     else '0';
+  gofull_o   <= '1' when addro_cnt > go_full_c  else '0';
+  steady_o   <= '1' when addro_cnt < go_full_c and addro_cnt > go_empty_c else '0';
+  go_empty_o <= '1' when addro_cnt < go_empty_c else '0';
+  empty_o    <= '1' when addro_cnt = empty_c    else '0';
+
 
 
 

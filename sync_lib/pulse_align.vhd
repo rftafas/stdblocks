@@ -7,7 +7,7 @@
 library ieee;
     use ieee.std_logic_1164.all;
 library stdblocks;
-    use stdblocks.sync_pkg.all;
+    use stdblocks.sync_lib.all;
 
 
 entity pulse_align is
@@ -27,8 +27,8 @@ architecture behavioral of pulse_align is
   signal mq_align : fsm_vector_t;
 
   function next_state_logic (
-    enable : std_logic,
-    status : std_logic_vector(en_i'range),
+    enable        : std_logic;
+    status        : std_logic_vector(en_i'range);
     current_state : align_t
     ) return align_t is
   begin
@@ -56,7 +56,7 @@ architecture behavioral of pulse_align is
           return '1';
 
         when others      =>
-          return '0'';
+          return '0';
 
       end case;
   end function;
@@ -82,7 +82,7 @@ begin
       mq_align <= (others=>idle);
     elsif rising_edge(mclk_i) then
       for j in en_i'range loop
-        status_v(j) := decode_status(mq_align(j))
+        status_v(j) := decode_status(mq_align(j));
       end loop;
       for j in en_i'range loop
         mq_align(j) <= next_state_logic(en_i(j), status_v, mq_align(j));

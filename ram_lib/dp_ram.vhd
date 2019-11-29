@@ -12,7 +12,9 @@ library stdblocks;
 
 entity dp_ram is
     generic (
-      ram_type : mem_t := "block"
+      mem_size  : integer := 8;
+      port_size : integer := 8;
+      ram_type  : mem_t   := blockram
     );
     port (
       --general
@@ -20,10 +22,11 @@ entity dp_ram is
       rsta_i   : in  std_logic;
       clkb_i   : in  std_logic;
       rstb_i   : in  std_logic;
-      addra_i  : in  std_logic_vector;
-      dataa_i  : in  std_logic_vector;
-      addrb_i  : in  std_logic_vector;
-      datab_o  : out std_logic_vector;
+      addra_i  : in  std_logic_vector(mem_size-1 downto 0);
+      addrb_i  : in  std_logic_vector(mem_size-1 downto 0);
+      dataa_i  : in  std_logic_vector(port_size-1 downto 0);
+      dataa_o  : out std_logic_vector(port_size-1 downto 0);
+      datab_o  : out std_logic_vector(port_size-1 downto 0);
       ena_i    : in  std_logic;
       enb_i    : in  std_logic;
       oeb_i    : in  std_logic;
@@ -33,22 +36,27 @@ end dp_ram;
 
 architecture behavioral of dp_ram is
 
-  constant ram_size : integer := 2**addra_i'length;
+  constant ram_size : integer := 2**mem_size;
   type ram_data_t  is array (ram_size-1 downto 0) of std_logic_vector(dataa_i'range);
   signal ram_data_s : ram_data_t(ram_size-1 downto 0) := (others=>(others=>'0'));
 
+  constant ram_string : string := ram_type_dec(ram_type); 
+  attribute ram_style of ram_data_s : signal is ram_string;
+
 begin
 
-  if ram_type = "registers" generate
+  ram_gen : if ram_type = registers generate
 
     ffin_p : process(clka_i, rsta_i)
     begin
       if rsta_i = '1' then
         ram_data_s <= (others=>(others=>'0'));
+        dataa_o    <= (others=>'0');
       elsif rising_edge(clka_i) then
         if ena_i = '1' then
+          dataa_o <= ram_data_s(to_integer(addra_i));
           if wea_i = '1' then
-            ram_data_s(to_integer(addra_i) := dataa_i;
+            ram_data_s(to_integer(addra_i)) <= dataa_i;
           end if;
         end if;
       end if;
@@ -67,9 +75,14 @@ begin
       end if;
     end process;
 
-  elsif ram_type = "ultra" generate
+  elsif ram_type = ultra generate
 
-    tdp_ram_i : tdp_ram
+    ultraram_u : tdp_ram
+      generic map(
+        mem_size  => mem_size,
+        port_size => port_size,
+        ram_type  => ram_type
+      )
       port map (
         clka_i  => clka_i,
         rsta_i  => rsta_i,
@@ -94,12 +107,46 @@ begin
       severity note;
 
     assert not clkb_i'event
-      report "Detected clock activity onport clock B. UltraRAM only uses clock from port A."
+      report "Detected clock activity on port clock B. UltraRAM only uses clock from port A."
       severity failure;
 
-  else generate --LUT e BLOCK
+  elsif ram_type = distributed generate
 
-    tdp_ram_i : tdp_ram
+    ffin_p : process(clka_i, rsta_i)
+    begin
+      if rsta_i = '1' then
+        dataa_o    <= (others=>'0');
+      elsif rising_edge(clka_i) then
+        if ena_i = '1' then
+          dataa_o <= ram_data_s(to_integer(addra_i));
+          if wea_i = '1' then
+            ram_data_s(to_integer(addra_i)) <= dataa_i;
+          end if;
+        end if;
+      end if;
+    end process;
+
+    ffout_p : process(clkb_i, rstb_i)
+    begin
+      if rstb_i = '1' then
+        datab_o <= (others=>'0');
+      elsif rising_edge(clkb_i) then
+        if enb_i = '1' then
+          if oeb_i = '1' then
+            datab_o <= ram_data_s(to_integer(addrb_i));
+          end if;
+        end if;
+      end if;
+    end process;
+
+  else generate --BLOCK
+
+    blockram_u : tdp_ram
+      generic map(
+        mem_size  => mem_size,
+        port_size => port_size,
+        ram_type  => ram_type
+      )
       port map (
         clka_i  => clka_i,
         rsta_i  => rsta_i,
@@ -109,7 +156,7 @@ begin
         addrb_i => addrb_i,
         dataa_i => dataa_i,
         datab_i => (dataa_i'range => '0'),
-        dataa_o => open,
+        dataa_o => dataa_o,
         datab_o => datab_o,
         ena_i   => ena_i,
         enb_i   => enb_i,
@@ -120,5 +167,6 @@ begin
       );
 
   end generate;
+ 
 
 end behavioral;
