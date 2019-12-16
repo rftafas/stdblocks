@@ -11,11 +11,14 @@ library stdblocks;
 
 
 entity pulse_align is
+    generic (
+      port_size : integer := 8
+    );
     port (
-        mclk_i : in  std_logic;
-        rst_i  : in  std_logic;
-        en_i   : in  std_logic_vector;
-        en_o   : out std_logic_vector
+      rst_i  : in  std_logic;
+      mclk_i : in  std_logic;
+      en_i   : in  std_logic_vector(port_size-1 downto 0);
+      en_o   : out std_logic_vector(port_size-1 downto 0)
     );
 end pulse_align;
 

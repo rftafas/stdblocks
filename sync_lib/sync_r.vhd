@@ -8,8 +8,8 @@
 ----------------------------------------------------------------------------------
 library ieee;
     use ieee.std_logic_1164.all;
-library sync_lib;
-    use sync_lib.sync_lib.all;
+library stdblocks;
+    use stdblocks.sync_lib.all;
 
 
 entity sync_r is
@@ -29,14 +29,14 @@ architecture behavioral of sync_r is
 begin
 
     process(mclk_i,rst_i)
-      variable reg_v : std_logic_vector(stages-1 downto 0) := (others=>'0');
+      variable reg_v : std_logic_vector(stages downto 0) := (others=>'0');
     begin
-      if rst_i = '0' then
+      if rst_i = '1' then
         reg_v := (others => '0');
         dout  <= '0';
       elsif rising_edge(mclk_i) then
-        reg_v(stages-1 downto 0) := reg_v(stages-2 downto 0) & din;
-        dout <= reg_v(stages-1);
+        reg_v := reg_v(stages-1 downto 0) & din;
+        dout  <= reg_v(stages);
       end if;
      end process;
 

@@ -10,8 +10,8 @@ package sync_lib is
       stages : integer := 2
     );
     port (
-      mclk_i : in  std_logic;
       rst_i  : in  std_logic;
+      mclk_i : in  std_logic;
       din    : in  std_logic;
       dout   : out std_logic
     );
@@ -19,8 +19,8 @@ package sync_lib is
 
   component det_down
     port (
-      mclk_i : in  std_logic;
       rst_i  : in  std_logic;
+      mclk_i : in  std_logic;
       din    : in  std_logic;
       dout   : out std_logic
     );
@@ -28,13 +28,24 @@ package sync_lib is
 
   component det_up
     port (
-      mclk_i : in  std_logic;
       rst_i  : in  std_logic;
+      mclk_i : in  std_logic;
       din    : in  std_logic;
       dout   : out std_logic
     );
   end component det_up;
 
+  component pulse_align
+  generic (
+    port_size : integer := 8
+  );
+  port (
+    rst_i  : in  std_logic;
+    mclk_i : in  std_logic;
+    en_i   : in  std_logic_vector(port_size-1 downto 0);
+    en_o   : out std_logic_vector(port_size-1 downto 0)
+  );
+  end component pulse_align;
 
 end package;
 

@@ -23,7 +23,7 @@ begin
     process(mclk_i, rst_i)
       variable reg_v : std_logic_vector(1 downto 0);
     begin
-      if rst_i = '0' then
+      if rst_i = '1' then
         reg_v := (others => '0');
         dout  <= '0';
       elsif rising_edge(mclk_i) then
