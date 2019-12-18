@@ -9,6 +9,9 @@ library expert;
     use expert.std_logic_expert.all;
 library stdblocks;
     use stdblocks.ram_lib.all;
+library stdblocks;
+    use stdblocks.fifo_lib.all;
+
 
 entity stdfifo1ck is
     generic (
@@ -38,17 +41,13 @@ end stdfifo1ck;
 
 architecture behavioral of stdfifo1ck is
 
+  constant debug : boolean := true;
+
   signal addri_cnt   : std_logic_vector(fifo_size-1 downto 0);
   signal addro_cnt   : std_logic_vector(fifo_size-1 downto 0);
+  signal fifo_mq     : fifo_state_t := steady_st;
 
-  constant fifo_length : integer := 2**fifo_size;
-
-  constant full_c     : integer :=    fifo_length-1;
-  constant go_full_c  : integer := fifo_length*9/10;
-  constant steady_c   : integer := fifo_length*5/10;
-  constant go_empty_c : integer := fifo_length*1/10;
-  constant empty_c    : integer :=                0;
-
+  signal enb_s : std_logic;
 
 begin
 
@@ -56,6 +55,7 @@ begin
   input_p : process(clk_i, rst_i)
   begin
     if rst_i = '1' then
+      addri_cnt <= (others=>'0');
     elsif clk_i'event and clk_i = '1' then
       if ena_i = '1' then
         addri_cnt    <= addri_cnt + 1;
@@ -64,9 +64,10 @@ begin
   end process;
 
   --output
-  input_p : process(clk_i, rst_i)
+  output_p : process(clk_i, rst_i)
   begin
     if rst_i = '1' then
+      addro_cnt <= (others=>'0');
     elsif clk_i'event and clk_i = '1' then
       if enb_i = '1' then
         addro_cnt    <= addro_cnt + 1;
@@ -74,17 +75,31 @@ begin
     end if;
   end process;
 
+  control_p : process(clk_i, rst_i)
+  begin
+    if rst_i = '1' then
+      fifo_mq <= empty_st;
+    elsif clk_i'event and clk_i = '1' then
+      fifo_mq <= sync_state(ena_i,enb_i,addri_cnt,addro_cnt,fifo_mq);
+    end if;
+  end process;
 
-  --Fifo state decode. must be optmized for state machine in the future.
-  full_o     <= '1' when addro_cnt = full_c     else '0';
-  gofull_o   <= '1' when addro_cnt > go_full_c  else '0';
-  steady_o   <= '1' when addro_cnt < go_full_c and addro_cnt > go_empty_c else '0';
-  go_empty_o <= '1' when addro_cnt < go_empty_c else '0';
-  empty_o    <= '1' when addro_cnt = empty_c    else '0';
+  overflow_o  <= '1' when fifo_mq = overflow_st  else '0';
+  full_o      <= '1' when fifo_mq = full_st      else '0';
+  gofull_o    <= '1' when fifo_mq = gofull_st    else '0';
+  steady_o    <= '1' when fifo_mq = steady_st    else '0';
+  goempty_o   <= '1' when fifo_mq = goempty_st   else '0';
+  empty_o     <= '1' when fifo_mq = empty_st     else '0';
+  underflow_o <= '1' when fifo_mq = underflow_st else '0';
+
+  enb_s <= '1'    when fifo_mq = empty_st else
+           enb_i;
 
   dp_ram_u : dp_ram
     generic map (
-      ram_type => ram_type
+      ram_type  => ram_type,
+      mem_size  => fifo_size,
+      port_size => port_size
     )
     port map (
       clka_i  => clk_i,
@@ -95,10 +110,17 @@ begin
       dataa_i => dataa_i,
       addrb_i => addro_cnt,
       datab_o => datab_o,
-      ena_i   => ena_i,
-      enb_i   => enb_i,
-      oeb_i   => oeb_i
+      ena_i   => '1',
+      enb_i   => '1',
+      oeb_i   => oeb_i,
+      wea_i   => ena_i
     );
+
+  debug_gen : if debug generate
+    signal delta_s : integer;
+  begin
+    delta_s <= to_integer( signed('0'&addro_cnt) - signed('0'&addri_cnt) );
+  end generate;
 
 
 end behavioral;

@@ -18,18 +18,19 @@ end det_down;
 
 architecture behavioral of det_down is
 
+  signal reg_s : std_logic;
+
 begin
 
     process(mclk_i, rst_i)
-      variable reg_v : std_logic_vector(1 downto 0);
     begin
       if rst_i = '1' then
-        reg_v := (others => '0');
-        dout  <= '0';
+        reg_s <= '0';
       elsif rising_edge(mclk_i) then
-        reg_v(1 downto 0) := reg_v(0) & din;
+        reg_s <= din;
       end if;
-      dout <= not reg_v(0) and reg_v(1);
-     end process;
+    end process;
+
+    dout <= reg_s and not din;
 
 end behavioral;

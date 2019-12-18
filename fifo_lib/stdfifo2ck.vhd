@@ -13,7 +13,8 @@ library stdblocks;
 entity stdfifo2ck is
     generic (
       ram_type : mem_t := "block";
-      fifo_size : integer := 8
+      fifo_size : integer := 8;
+      port_size : integer := 8
     );
     port (
       --general
@@ -21,27 +22,27 @@ entity stdfifo2ck is
       rsta_i       : in  std_logic;
       clkb_i       : in  std_logic;
       rstb_i       : in  std_logic;
-      dataa_i      : in  std_logic_vector;
-      datab_o      : out std_logic_vector;
+      dataa_i      : in  std_logic_vector(port_size-1 downto 0);
+      datab_o      : out std_logic_vector(port_size-1 downto 0);
       ena_i        : in  std_logic;
       enb_i        : in  std_logic;
       oeb_i        : in  std_logic;
       --status_port_a
-      overflowa_o  : in  std_logic;
-      fulla_o      : in  std_logic;
-      gofulla_o    : in  std_logic;
-      steadya_o    : in  std_logic;
-      goemptya_o   : in  std_logic;
-      emptya_o     : in  std_logic;
-      underflowa_o : in  std_logic;
+      overflowa_o  : out std_logic;
+      fulla_o      : out std_logic;
+      gofulla_o    : out std_logic;
+      steadya_o    : out std_logic;
+      goemptya_o   : out std_logic;
+      emptya_o     : out std_logic;
+      underflowa_o : out std_logic;
       --status_port_b
-      overflowb_o  : in  std_logic;
-      fullb_o      : in  std_logic;
-      gofullb_o    : in  std_logic;
-      steadyb_o    : in  std_logic;
-      goemptyb_o   : in  std_logic;
-      emptyb_o     : in  std_logic;
-      underflowb_o : in  std_logic
+      overflowb_o  : out std_logic;
+      fullb_o      : out std_logic;
+      gofullb_o    : out std_logic;
+      steadyb_o    : out std_logic;
+      goemptyb_o   : out std_logic;
+      emptyb_o     : out std_logic;
+      underflowb_o : out std_logic
     );
 end stdfifo2ck;
 

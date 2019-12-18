@@ -20,17 +20,19 @@ end det_up;
 
 architecture behavioral of det_up is
 
+  signal reg_s : std_logic;
+
 begin
 
     process(mclk_i, rst_i)
-      variable reg_v : std_logic_vector(1 downto 0);
     begin
       if rst_i = '1' then
-        reg_v := (others => '0');
+        reg_s <= '0';
       elsif rising_edge(mclk_i) then
-        reg_v(1 downto 0) := reg_v(0) & din;
+        reg_s <= din;
       end if;
-      dout <= reg_v(0) and not reg_v(1);
     end process;
+
+    dout <= not reg_s and din;
 
 end behavioral;

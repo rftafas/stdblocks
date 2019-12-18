@@ -44,10 +44,10 @@ package ram_lib is
       rsta_i  : in  std_logic;
       clkb_i  : in  std_logic;
       rstb_i  : in  std_logic;
-      addra_i : in  std_logic_vector;
-      dataa_i : in  std_logic_vector;
-      addrb_i : in  std_logic_vector;
-      datab_o : out std_logic_vector;
+      addra_i : in  std_logic_vector( mem_size-1 downto 0);
+      dataa_i : in  std_logic_vector(port_size-1 downto 0);
+      addrb_i : in  std_logic_vector( mem_size-1 downto 0);
+      datab_o : out std_logic_vector(port_size-1 downto 0);
       ena_i   : in  std_logic;
       enb_i   : in  std_logic;
       oeb_i   : in  std_logic;
@@ -62,22 +62,22 @@ end package;
 package body ram_lib is
 
     function ram_type_dec ( ram_type : mem_t ) return string is
-        variable tmp : string;
+        --variable tmp : string;
     begin
         case ram_type is
             when blockram =>
-                tmp := "block";
+                return "block";
             when ultra =>
-                tmp := "ultra";
+                return "ultra";
             when registers =>
-                tmp := "registers";
+                return "registers";
             when distributed =>
-                tmp := "distributed";
+                return "distributed";
             when others =>
-                tmp := "registers";
+                return "registers";
                 report "Unknown ram type. Using Flip-flops." severity warning;
         end case;
-        return tmp;
+        --return tmp;
     end function ram_type_dec;
 
 

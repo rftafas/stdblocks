@@ -38,9 +38,9 @@ architecture behavioral of dp_ram is
 
   constant ram_size : integer := 2**mem_size;
   type ram_data_t  is array (ram_size-1 downto 0) of std_logic_vector(dataa_i'range);
-  signal ram_data_s : ram_data_t(ram_size-1 downto 0) := (others=>(others=>'0'));
+  signal ram_data_s : ram_data_t := (others=>(others=>'0'));
 
-  constant ram_string : string := ram_type_dec(ram_type); 
+  constant ram_string : string := ram_type_dec(ram_type);
   attribute ram_style of ram_data_s : signal is ram_string;
 
 begin
@@ -167,6 +167,6 @@ begin
       );
 
   end generate;
- 
+
 
 end behavioral;
