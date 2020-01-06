@@ -5,11 +5,11 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-library stdexpert;
-    use stdexpert.std_logic_expert.all;
+library expert;
+    use expert.std_logic_expert.all;
 
 
-entity tdp_ram is
+entity tdp_ram_difport is
     generic (
       --ram_type   : mem_t   := "block"
       ram_size   : integer := 1;
@@ -35,9 +35,9 @@ entity tdp_ram is
       wea_i    : in  std_logic;
       web_i    : in  std_logic
     );
-end tdp_ram;
+end tdp_ram_difport;
 
-architecture behavioral of tdp_ram is
+architecture behavioral of tdp_ram_difport is
 
   constant ram_word : integer := porta_size*portb_size;
 

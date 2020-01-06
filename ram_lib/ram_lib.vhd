@@ -43,6 +43,7 @@ package ram_lib is
       rstb_i  : in  std_logic;
       addra_i : in  std_logic_vector( mem_size-1 downto 0);
       dataa_i : in  std_logic_vector(port_size-1 downto 0);
+      dataa_o : out std_logic_vector(port_size-1 downto 0);
       addrb_i : in  std_logic_vector( mem_size-1 downto 0);
       datab_o : out std_logic_vector(port_size-1 downto 0);
       ena_i   : in  std_logic;

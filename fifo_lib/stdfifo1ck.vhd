@@ -23,8 +23,8 @@ entity stdfifo1ck is
       --general
       clk_i       : in  std_logic;
       rst_i       : in  std_logic;
-      dataa_i     : in  std_logic_vector;
-      datab_o     : out std_logic_vector;
+      dataa_i     : in  std_logic_vector(port_size-1 downto 0);
+      datab_o     : out std_logic_vector(port_size-1 downto 0);
       ena_i       : in  std_logic;
       enb_i       : in  std_logic;
       oeb_i       : in  std_logic;

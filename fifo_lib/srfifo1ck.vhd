@@ -18,10 +18,8 @@ entity srfifo1ck is
     );
     port (
       --general
-      clka_i      : in  std_logic;
-      rsta_i      : in  std_logic;
-      clkb_i      : in  std_logic;
-      rstb_i      : in  std_logic;
+      clk_i       : in  std_logic;
+      rst_i       : in  std_logic;
       dataa_i     : in  std_logic_vector(port_size-1 downto 0);
       datab_o     : out std_logic_vector(port_size-1 downto 0);
       ena_i       : in  std_logic;
@@ -44,6 +42,12 @@ architecture behavioral of srfifo1ck is
 
   signal addro_cnt     : integer range -1 to fifo_length-1;
 
+  constant full_c      : integer :=    fifo_length-1;
+  constant go_full_c   : integer := fifo_length*9/10;
+  constant steady_c    : integer := fifo_length*5/10;
+  constant go_empty_c  : integer := fifo_length*1/10;
+  constant empty_c     : integer :=                0;
+
   type srmem_t is array (fifo_length-1 downto 0) of std_logic_vector(port_size-1 downto 0);
   signal data_sr       : srmem_t := (others=>(others=>'0'));
 
@@ -51,10 +55,10 @@ begin
 
   --Input
 
-  input_p : process(clka_i, rsta_i)
+  input_p : process(clk_i, rst_i)
   begin
-    if rsta_i = '1' then
-    elsif clka_i'event and clka_i = '1' then
+    if rst_i = '1' then
+    elsif clk_i'event and clk_i = '1' then
       if ena_i = '1' then
         data_sr(0) <= dataa_i;
         data_sr(data_sr'high downto 1) <= data_sr(data_sr'high-1 downto 0);
@@ -63,11 +67,11 @@ begin
   end process;
 
   --output
-  output_p : process(clkb_i, rstb_i)
+  output_p : process(clk_i, rst_i)
   begin
-    if rstb_i = '1' then
+    if rst_i = '1' then
       addro_cnt <= -1;
-    elsif clkb_i'event and clkb_i = '1' then
+    elsif clk_i'event and clk_i = '1' then
       if ena_i = '1' and enb_i = '0' then
         if addro_cnt < fifo_length-1 then
           addro_cnt    <= addro_cnt + 1;
@@ -80,11 +84,11 @@ begin
     end if;
   end process;
 
-  dout_p : process(clkb_i, rstb_i)
+  dout_p : process(clk_i, rst_i)
     variable tmp_add : integer := 0;
   begin
-    if rstb_i = '1' then
-    elsif clkb_i'event and clkb_i = '1' then
+    if rst_i = '1' then
+    elsif clk_i'event and clk_i = '1' then
       if addro_cnt > -1 and addro_cnt < fifo_length-1 then
         datab_o <= data_sr(addro_cnt);
       else
@@ -97,7 +101,7 @@ begin
   full_o     <= '1' when addro_cnt = full_c     else '0';
   gofull_o   <= '1' when addro_cnt > go_full_c  else '0';
   steady_o   <= '1' when addro_cnt < go_full_c and addro_cnt > go_empty_c else '0';
-  go_empty_o <= '1' when addro_cnt < go_empty_c else '0';
+  goempty_o  <= '1' when addro_cnt < go_empty_c else '0';
   empty_o    <= '1' when addro_cnt = empty_c    else '0';
 
 

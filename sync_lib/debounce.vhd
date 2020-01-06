@@ -12,8 +12,8 @@ entity debounce is
     port (
       rst_i  : in  std_logic;
       mclk_i  : in  std_logic;
-      din     : in  std_logic_vector;
-      dout    : out std_logic_vector
+      din     : in  std_logic;
+      dout    : out std_logic
     );
 end debounce;
 

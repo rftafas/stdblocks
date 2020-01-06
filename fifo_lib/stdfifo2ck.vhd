@@ -3,17 +3,18 @@
 -- For this IP, CPOL = 0 and CPHA = 0. SPI Master must be configured accordingly.
 ----------------------------------------------------------------------------------
 library ieee;
-    use ieee.std_logic_1164.all;
-    use ieee.numeric_std.all;
+  use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
 library expert;
-    use expert.std_logic_gray.all;
+  use expert.std_logic_gray.all;
 library stdblocks;
-    use stdblocks.ram_lib.all;
-    use stdblocks.fifo_lib.all;
+  use stdblocks.sync_lib.all;
+  use stdblocks.ram_lib.all;
+  use stdblocks.fifo_lib.all;
 
 entity stdfifo2ck is
     generic (
-      ram_type  : fifo_t := "block";
+      ram_type  : fifo_t := blockram;
       fifo_size : integer := 8;
       port_size : integer := 8
     );
@@ -27,7 +28,6 @@ entity stdfifo2ck is
       datab_o      : out std_logic_vector(port_size-1 downto 0);
       ena_i        : in  std_logic;
       enb_i        : in  std_logic;
-      oeb_i        : in  std_logic;
       --status_port_a
       overflowa_o  : out std_logic;
       fulla_o      : out std_logic;
@@ -49,44 +49,62 @@ end stdfifo2ck;
 
 architecture behavioral of stdfifo2ck is
 
+  signal input_fifo_mq      : fifo_state_t := steady_st;
+  signal output_fifo_mq     : fifo_state_t := steady_st;
+
   signal addri_cnt     : gray_vector(fifo_size-1 downto 0);
   signal addro_cnt     : gray_vector(fifo_size-1 downto 0);
+  signal addro_s       : gray_vector(fifo_size-1 downto 0);
 
   signal addri_cnt_s   : gray_vector(fifo_size-1 downto 0);
   signal addro_cnt_s   : gray_vector(fifo_size-1 downto 0);
 
-  constant fifo_length : integer := 2**fifo_size;
-
-  constant full_c      : gray_vector := to_gray_vector(   fifo_length-1,fifo_size);
-  constant go_full_c   : gray_vector := to_gray_vector(fifo_length*9/10,fifo_size);
-  constant steady_c    : gray_vector := to_gray_vector(fifo_length*5/10,fifo_size);
-  constant go_empty_c  : gray_vector := to_gray_vector(fifo_length*1/10,fifo_size);
-  constant empty_c     : gray_vector := to_gray_vector(               0,fifo_size);
-
+  signal enb_s         : std_logic;
   signal enb_i_s       : std_logic;
   signal ena_i_s       : std_logic;
 
 begin
 
   --Input
+  ena_i_s <= '0' when input_fifo_mq = full_st else
+             '0' when input_fifo_mq = overflow_st else
+             ena_i;
+
   input_p : process(clka_i, rsta_i)
+    variable addri_v : std_logic_vector(addri_cnt'range);
+    variable addro_v : std_logic_vector(addro_cnt'range);
   begin
     if rsta_i = '1' then
+      addri_cnt     <= (others=>'0');
+      input_fifo_mq <= steady_st;
     elsif clka_i'event and clka_i = '1' then
-      if ena_i = '1' then
+      if ena_i_s = '1' then
         addri_cnt    <= addri_cnt + 1;
       end if;
+      addri_v       := to_std_logic_vector(addri_cnt);
+      addro_v       := to_std_logic_vector(addro_cnt_s);
+      input_fifo_mq <= async_input_state(ena_i,addri_v,addro_v,input_fifo_mq);
     end if;
   end process;
 
   --output
-  input_p : process(clkb_i, rstb_i)
+  enb_i_s <= '0' when output_fifo_mq = empty_st else
+             '0' when output_fifo_mq = underflow_st else
+             enb_i;
+  output_p : process(clkb_i, rstb_i)
+    variable addri_v : std_logic_vector(addri_cnt'range);
+    variable addro_v : std_logic_vector(addro_cnt'range);
   begin
     if rstb_i = '1' then
+      addro_cnt      <= (others=>'0');
+      output_fifo_mq <= empty_st;
     elsif clkb_i'event and clkb_i = '1' then
-      if enb_i = '1' then
+      if enb_i_s = '1' then
         addro_cnt    <= addro_cnt + 1;
       end if;
+      addri_v := to_std_logic_vector(addri_cnt_s);
+      addro_v := to_std_logic_vector(addro_cnt);
+      output_fifo_mq <= async_output_state(enb_i,addri_v,addro_v,output_fifo_mq);
     end if;
   end process;
 
@@ -100,8 +118,8 @@ begin
       port map (
         mclk_i => clka_i,
         rst_i  => '0',
-        din    => addro_cnt,
-        dout   => addro_cnt_s
+        din    => addro_cnt(j),
+        dout   => addro_cnt_s(j)
       );
 
       sync_b : sync_r
@@ -111,82 +129,38 @@ begin
         port map (
           mclk_i => clkb_i,
           rst_i  => '0',
-          din    => addri_cnt,
-          dout   => addri_cnt_s
+          din    => addri_cnt(j),
+          dout   => addri_cnt_s(j)
         );
 
   end generate;
 
-  --Fifo state decode. must be optmized for state machine in the future.
-  --input
-  full_a_s     <= '1' when addro_cnt_s - addri_cnt = full_c    else '0';
-  gofull_a_s   <= '1' when addro_cnt_s - addri_cnt > go_full_c else '0';
-  steady_a_s   <= '1' when (full_a_s or gofull_a_s or go_empty_a_s or empty_a_s) = '0' else '0';
-  go_empty_a_s <= '1' when addro_cnt_s - addri_cnt < go_full_c else '0';
-  empty_a_s    <= '1' when addro_cnt_s - addri_cnt = empty_c   else '0';
-  --output
-  full_b_s     <= '1' when addro_cnt - addri_cnt_s = full_c    else '0';
-  gofull_b_s   <= '1' when addro_cnt - addri_cnt_s > go_full_c else '0';
-  steady_b_s   <= '1' when (full_b_s or gofull_b_s or go_empty_b_s or empty_b_s) = '0' else '0';
-  go_empty_b_s <= '1' when addro_cnt - addri_cnt_s < go_full_c else '0';
-  empty_b_s    <= '1' when addro_cnt - addri_cnt_s = empty_c   else '0';
+  --fallthrough
+  addro_s <= addro_cnt  when output_fifo_mq = empty_st else
+             addro_cnt + 1;
+  enb_s   <= '1'    when output_fifo_mq = empty_st else
+             enb_i;
+
 
   dp_ram_i : dp_ram
     generic map (
-      ram_type => fifo_type_dec(ram_type)
+      ram_type  => fifo_type_dec(ram_type),
+      mem_size  => fifo_size,
+      port_size => port_size
     )
     port map (
       clka_i  => clka_i,
       rsta_i  => rsta_i,
       clkb_i  => clkb_i,
       rstb_i  => rstb_i,
-      addra_i => addri_cnt,
+      addra_i => to_std_logic_vector(addri_cnt),
       dataa_i => dataa_i,
-      addrb_i => addro_cnt,
+      addrb_i => to_std_logic_vector(addro_s),
       datab_o => datab_o,
       ena_i   => ena_i,
+      wea_i   => ena_i,
       enb_i   => enb_i
     );
 
-    --mudar para stretch para garantir que enables rpápidos sejam
-    --capturados por clocks lentos.
-    sync_ena : sync_r
-      generic map (
-        stages => 1
-      )
-      port map (
-        mclk_i => clkb_i,
-        rst_i  => '0',
-        din    => ena_i,
-        dout   => ena_i_s
-      );
-
-    sync_enb : sync_r
-      generic map (
-        stages => 1
-      )
-      port map (
-        mclk_i => clka_i,
-        rst_i  => '0',
-        din    => enb_i,
-        dout   => enb_i_s
-      );
-
-    --
-    overflowa_o  <= full_a_s and ena_i;
-    fulla_o      <= full_a_s;
-    gofulla_o    <= gofull_a_s;
-    steadya_o    <= steady_a_s;
-    goemptya_o   <= go_empty_a_s;
-    emptya_o     <= empty_a_s;
-    underflowa_o <= empty_a_s and enb_i_s;
-    --
-    overflowb_o  <= full_b_s and ena_i_s;
-    fullb_o      <= full_b_s;
-    gofullb_o    <= gofull_b_s;
-    steadyb_o    <= steady_b_s;
-    goemptyb_o   <= go_empty_b_s;
-    emptyb_o     <= empty_b_s;
-    underflowb_o <= empty_b_s and enb_i;
 
 end behavioral;

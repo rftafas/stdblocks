@@ -34,22 +34,26 @@ architecture behavioral of pulse_align is
     status        : std_logic_vector(en_i'range);
     current_state : align_t
     ) return align_t is
+
+      variable tmp : align_t;
   begin
+    tmp := current_state;
     case current_state is
         when idle        =>
           if enable = '1' then
-            return wait_others;
+            tmp :=  wait_others;
           end if;
 
         when wait_others =>
           if status = (status'range => '1') then
-            return active;
+            tmp :=  active;
           end if;
 
         when others      =>
-          return idle;
+          tmp := idle;
 
       end case;
+      return tmp;
   end function;
 
   function decode_status( current_state : align_t ) return std_logic is
