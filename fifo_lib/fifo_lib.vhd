@@ -9,9 +9,17 @@ library stdblocks;
 
 package fifo_lib is
 
+  type fifo_t is (blockram, ultra, registers, distributed);
+  function fifo_type_dec ( ram_type : fifo_t ) return mem_t;
+
+  type fifo_state_t is (underflow_st, empty_st, goempty_st, steady_st, gofull_st, full_st, overflow_st);
+  function sync_state (
+    ien : std_logic; oen : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
+  ) return fifo_state_t;
+
   component stdfifo2ck
     generic (
-      ram_type  : mem_t;
+      ram_type  : fifo_t;
       fifo_size : integer := 8
     );
     port (
@@ -43,7 +51,7 @@ package fifo_lib is
 
   component stdfifo1ck
     generic (
-      ram_type  : mem_t;
+      ram_type  : fifo_t;
       port_size : integer := 8;
       fifo_size : integer := 8
     );
@@ -90,64 +98,95 @@ package fifo_lib is
     );
   end component srfifo1ck;
 
-  type fifo_state_t is (underflow_st, empty_st, goempty_st, steady_st, gofull_st, full_st, overflow_st);
-  function sync_state (
-    ien : std_logic; oen : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
-  ) return fifo_state_t;
-
 end package;
 
 package body fifo_lib is
+
+
+  function fifo_type_dec ( ram_type : fifo_t ) return mem_t is
+      --variable tmp : string;
+  begin
+      case ram_type is
+          when blockram =>
+              return blockram;
+          when ultra =>
+              return ultra;
+          when registers =>
+              return registers;
+          when distributed =>
+              return distributed;
+          when others =>
+              return registers;
+              report "Unknown ram type. Using Flip-flops." severity warning;
+      end case;
+      --return tmp;
+  end function fifo_type_dec;
+
 
   function sync_state (
     ien : std_logic; oen : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
   ) return fifo_state_t is
     variable tmp         : fifo_state_t := steady_st;
-    variable delta       : integer      := 0;
-    variable fifo_length : integer      := 2**iaddr'length;
+    variable delta       : unsigned(iaddr'range) := (others=>'0');
+    variable up          : std_logic             := '0';
+    variable dn          : std_logic             := '0';
+    variable fifo_length : integer               := 2**iaddr'length;
   begin
     tmp   := current_state;
-    delta := to_integer(signed(oaddr) - signed(iaddr));
+    delta := unsigned(iaddr - oaddr);
+
+    up := ien and not oen;
+    dn := oen and not ien;
+
 		case current_state is
       when empty_st =>
-        if oen = '1' then
-          if delta = -1 then
-            tmp :=  underflow_st;
-          end if;
-        elsif delta = -2 then
-          tmp := goempty_st;
+        if dn = '1' then
+          tmp := underflow_st;
+        elsif up = '1' then
+          tmp:= goempty_st;
         end if;
 
       when goempty_st =>
-        if delta = -1 and oen = '1' then
+        if delta = 1 and dn  = '1' then
           tmp :=  empty_st;
-        elsif delta = -fifo_length/4 then
+        elsif delta = fifo_length/4 then
           tmp:= steady_st;
         end if;
 
       when steady_st =>
-        if    delta =  fifo_length/4 then
-          tmp := gofull_st;
-        elsif delta = -fifo_length/4 then
-          tmp:= goempty_st;
+        if    delta =  fifo_length/4-1 then
+          tmp := goempty_st;
+        elsif delta = 3*fifo_length/4 then
+          tmp:= gofull_st;
         end if;
 
       when gofull_st =>
-        if delta = 2 and ien = '1' then
-          tmp :=  full_st;
-        elsif delta = fifo_length/4 then
-          tmp:= steady_st;
+        if delta = fifo_length-1 and up = '1' then
+          tmp:= full_st;
+        elsif delta = 3*fifo_length/4-1 then
+          tmp :=  steady_st;
         end if;
+
       when full_st =>
-        if ien = '1' then
-          if delta = 0 then
-            tmp :=  overflow_st;
-          end if;
-        elsif delta = 2 then
+        if up = '1' then
+          tmp :=  overflow_st;
+        elsif dn = '1' then
           tmp := gofull_st;
         end if;
+
+      when overflow_st =>
+        if delta = 3*fifo_length/4-1 then
+          tmp :=  steady_st;
+        end if;
+
+      when underflow_st =>
+        if delta = fifo_length/4 then
+          tmp:= steady_st;
+        end if;
+
       when others =>
         tmp := steady_st;
+
     end case;
     return tmp;
 	end sync_state;

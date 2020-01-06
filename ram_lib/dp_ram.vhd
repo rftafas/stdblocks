@@ -29,7 +29,6 @@ entity dp_ram is
       datab_o  : out std_logic_vector(port_size-1 downto 0);
       ena_i    : in  std_logic;
       enb_i    : in  std_logic;
-      oeb_i    : in  std_logic;
       wea_i    : in  std_logic
     );
 end dp_ram;
@@ -68,9 +67,7 @@ begin
         datab_o <= (others=>'0');
       elsif rising_edge(clkb_i) then
         if enb_i = '1' then
-          if oeb_i = '1' then
-            datab_o <= ram_data_s(to_integer(addrb_i));
-          end if;
+          datab_o <= ram_data_s(to_integer(addrb_i));
         end if;
       end if;
     end process;
@@ -96,8 +93,6 @@ begin
         datab_o => datab_o,
         ena_i   => ena_i,
         enb_i   => enb_i,
-        oea_i   => '0',
-        oeb_i   => oeb_i,
         wea_i   => wea_i,
         web_i   => '0'
       );
@@ -132,9 +127,7 @@ begin
         datab_o <= (others=>'0');
       elsif rising_edge(clkb_i) then
         if enb_i = '1' then
-          if oeb_i = '1' then
-            datab_o <= ram_data_s(to_integer(addrb_i));
-          end if;
+          datab_o <= ram_data_s(to_integer(addrb_i));
         end if;
       end if;
     end process;
@@ -160,8 +153,6 @@ begin
         datab_o => datab_o,
         ena_i   => ena_i,
         enb_i   => enb_i,
-        oea_i   => '0',
-        oeb_i   => oeb_i,
         wea_i   => wea_i,
         web_i   => '0'
       );

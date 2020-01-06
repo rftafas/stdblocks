@@ -9,10 +9,11 @@ library expert;
     use expert.std_logic_gray.all;
 library stdblocks;
     use stdblocks.ram_lib.all;
+    use stdblocks.fifo_lib.all;
 
 entity stdfifo2ck is
     generic (
-      ram_type : mem_t := "block";
+      ram_type  : fifo_t := "block";
       fifo_size : integer := 8;
       port_size : integer := 8
     );
@@ -132,7 +133,7 @@ begin
 
   dp_ram_i : dp_ram
     generic map (
-      ram_type => ram_type
+      ram_type => fifo_type_dec(ram_type)
     )
     port map (
       clka_i  => clka_i,
@@ -144,8 +145,7 @@ begin
       addrb_i => addro_cnt,
       datab_o => datab_o,
       ena_i   => ena_i,
-      enb_i   => enb_i,
-      oeb_i   => oeb_i
+      enb_i   => enb_i
     );
 
     --mudar para stretch para garantir que enables rpápidos sejam

@@ -30,8 +30,6 @@ entity tdp_ram is
       datab_o  : out std_logic_vector(port_size-1 downto 0);
       ena_i    : in  std_logic;
       enb_i    : in  std_logic;
-      oea_i    : in  std_logic;
-      oeb_i    : in  std_logic;
       wea_i    : in  std_logic;
       web_i    : in  std_logic
     );
@@ -43,7 +41,7 @@ architecture behavioral of tdp_ram is
   type ram_data_t  is array (ram_size_c-1 downto 0) of std_logic_vector(port_size-1 downto 0);
   shared variable ram_data_v : ram_data_t := (others=>(others=>'0'));
 
-  constant ram_string : string := ram_type_dec(ram_type); 
+  constant ram_string : string := ram_type_dec(ram_type);
   attribute ram_style of ram_data_v : variable is ram_string;
 
 begin

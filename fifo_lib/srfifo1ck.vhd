@@ -8,7 +8,8 @@ library ieee;
 library expert;
     use expert.std_logic_gray.all;
 library stdblocks;
-    use stdblocks.ram_lib.all;
+  use stdblocks.ram_lib.all;
+  use stdblocks.fifo_lib.all;
 
 entity srfifo1ck is
     generic (

@@ -8,8 +8,6 @@ library ieee;
 library expert;
     use expert.std_logic_expert.all;
 library stdblocks;
-    use stdblocks.ram_lib.all;
-library stdblocks;
     use stdblocks.fifo_lib.all;
 
 
@@ -42,17 +40,19 @@ begin
 
   process
   begin
+    enb_i   <= '0';
+    ena_i   <= '0';
     wait until rst_i = '0';
     wait until rising_edge(clk_i);
     --write
-    for j in 15 downto 0 loop
+    for j in 16 downto 1 loop
       ena_i   <= '1';
       dataa_i <= to_std_logic_vector(j,dataa_i'length);
       wait until rising_edge(clk_i);
     end loop;
     ena_i   <= '0';
     --read
-    for j in 0 to 15 loop
+    for j in 1 to 16 loop
       enb_i   <= '1';
       wait until rising_edge(clk_i);
     end loop;

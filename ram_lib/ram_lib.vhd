@@ -25,13 +25,10 @@ package ram_lib is
       datab_o : out std_logic_vector(port_size-1 downto 0);
       ena_i   : in  std_logic;
       enb_i   : in  std_logic;
-      oea_i   : in  std_logic;
-      oeb_i   : in  std_logic;
       wea_i   : in  std_logic;
       web_i   : in  std_logic
     );
   end component tdp_ram;
-
 
   component dp_ram
     generic (
@@ -50,7 +47,6 @@ package ram_lib is
       datab_o : out std_logic_vector(port_size-1 downto 0);
       ena_i   : in  std_logic;
       enb_i   : in  std_logic;
-      oeb_i   : in  std_logic;
       wea_i   : in  std_logic
     );
   end component dp_ram;
