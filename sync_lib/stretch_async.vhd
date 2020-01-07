@@ -20,35 +20,38 @@ architecture behavioral of async_stretch is
 
   --for the future: include attributes for false path.
 
-  signal reg_forward_s : std_logic;
-  signal reg_back_s    : std_logic;
+  signal reg_forward_s : std_logic := '0';
+  signal reg_out_s     : std_logic := '0';
+  signal reg_meta_s    : std_logic := '0';
+  signal reg_back_s    : std_logic_vector(1 downto 0) := (others=>'0');
 
 begin
 
   process(fastclk_i)
-    variable reg_v : std_logic_vector(1 downto 0);
   begin
     if rising_edge(fastclk_i) then
+      reg_back_s <= reg_back_s(0) & reg_out_s;
       if din = '1' then
         reg_forward_s <= '1';
-      elsif reg_v(1) = '1' then
+      elsif reg_back_s(1) = '1' then
         reg_forward_s <= '0';
       end if;
-      reg_v := reg_v(0) & reg_back_s;
     end if;
   end process;
 
   process(slowclk_i)
-    variable reg_v : std_logic_vector(1 downto 0);
   begin
     if rising_edge(slowclk_i) then
-      if reg_v(1) = '1' then
-        reg_back_s <= '1';
+      if reg_out_s = '1' then
+        reg_out_s  <= '0';
+        reg_meta_s <= '0';
       else
-        reg_back_s <= '0';
+        reg_meta_s <= reg_forward_s;
+        reg_out_s  <= reg_meta_s;
       end if;
-      reg_v := reg_v(0) & reg_forward_s;
     end if;
   end process;
+
+  dout <= reg_out_s;
 
 end behavioral;

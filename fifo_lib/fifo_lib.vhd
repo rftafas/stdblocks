@@ -9,6 +9,16 @@ library stdblocks;
 
 package fifo_lib is
 
+  type fifo_status is record
+    overflow  : std_logic;
+    full      : std_logic;
+    gofull    : std_logic;
+    steady    : std_logic;
+    goempty   : std_logic;
+    empty     : std_logic;
+    underflow : std_logic;
+  end record fifo_status;
+
   type fifo_t is (blockram, ultra, registers, distributed);
   function fifo_type_dec ( ram_type : fifo_t ) return mem_t;
 
@@ -17,12 +27,8 @@ package fifo_lib is
     ien : std_logic; oen : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
   ) return fifo_state_t;
 
-  function async_input_state (
-    ien : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
-  ) return fifo_state_t;
-
-  function async_output_state (
-    oen : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
+  function async_state (
+    ien : std_logic; oen : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
   ) return fifo_state_t;
 
   component stdfifo2ck
@@ -32,28 +38,16 @@ package fifo_lib is
       port_size : integer := 8
     );
     port (
-      clka_i       : in  std_logic;
-      rsta_i       : in  std_logic;
-      clkb_i       : in  std_logic;
-      rstb_i       : in  std_logic;
-      dataa_i      : in  std_logic_vector(port_size-1 downto 0);
-      datab_o      : out std_logic_vector(port_size-1 downto 0);
-      ena_i        : in  std_logic;
-      enb_i        : in  std_logic;
-      overflowa_o  : out std_logic;
-      fulla_o      : out std_logic;
-      gofulla_o    : out std_logic;
-      steadya_o    : out std_logic;
-      goemptya_o   : out std_logic;
-      emptya_o     : out std_logic;
-      underflowa_o : out std_logic;
-      overflowb_o  : out std_logic;
-      fullb_o      : out std_logic;
-      gofullb_o    : out std_logic;
-      steadyb_o    : out std_logic;
-      goemptyb_o   : out std_logic;
-      emptyb_o     : out std_logic;
-      underflowb_o : out std_logic
+      clka_i          : in  std_logic;
+      rsta_i          : in  std_logic;
+      clkb_i          : in  std_logic;
+      rstb_i          : in  std_logic;
+      dataa_i         : in  std_logic_vector(port_size-1 downto 0);
+      datab_o         : out std_logic_vector(port_size-1 downto 0);
+      ena_i           : in  std_logic;
+      enb_i           : in  std_logic;
+      fifo_status_a_o : out fifo_status;
+      fifo_status_b_o : out fifo_status
     );
   end component stdfifo2ck;
 
@@ -64,20 +58,13 @@ package fifo_lib is
       fifo_size : integer := 8
     );
     port (
-      clk_i       : in  std_logic;
-      rst_i       : in  std_logic;
-      dataa_i     : in  std_logic_vector(port_size-1 downto 0);
-      datab_o     : out std_logic_vector(port_size-1 downto 0);
-      ena_i       : in  std_logic;
-      enb_i       : in  std_logic;
-      oeb_i       : in  std_logic;
-      overflow_o  : out std_logic;
-      full_o      : out std_logic;
-      gofull_o    : out std_logic;
-      steady_o    : out std_logic;
-      goempty_o   : out std_logic;
-      empty_o     : out std_logic;
-      underflow_o : out std_logic
+      clk_i         : in  std_logic;
+      rst_i         : in  std_logic;
+      dataa_i       : in  std_logic_vector(port_size-1 downto 0);
+      datab_o       : out std_logic_vector(port_size-1 downto 0);
+      ena_i         : in  std_logic;
+      enb_i         : in  std_logic;
+      fifo_status_o : out fifo_status
     );
   end component stdfifo1ck;
 
@@ -87,20 +74,13 @@ package fifo_lib is
       port_size : integer := 8
     );
     port (
-      clk_i       : in  std_logic;
-      rst_i       : in  std_logic;
-      dataa_i     : in  std_logic_vector(port_size-1 downto 0);
-      datab_o     : out std_logic_vector(port_size-1 downto 0);
-      ena_i       : in  std_logic;
-      enb_i       : in  std_logic;
-      oeb_i       : in  std_logic;
-      overflow_o  : out std_logic;
-      full_o      : out std_logic;
-      gofull_o    : out std_logic;
-      steady_o    : out std_logic;
-      goempty_o   : out std_logic;
-      empty_o     : out std_logic;
-      underflow_o : out std_logic
+      clk_i         : in  std_logic;
+      rst_i         : in  std_logic;
+      dataa_i       : in  std_logic_vector(port_size-1 downto 0);
+      datab_o       : out std_logic_vector(port_size-1 downto 0);
+      ena_i         : in  std_logic;
+      enb_i         : in  std_logic;
+      fifo_status_o : out fifo_status
     );
   end component srfifo1ck;
 
@@ -199,8 +179,8 @@ package body fifo_lib is
     return tmp;
 	end sync_state;
 
-  function async_output_state (
-    oen : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
+  function async_state (
+    ien : std_logic; oen : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
   ) return fifo_state_t is
     variable tmp         : fifo_state_t := steady_st;
     variable delta       : unsigned(iaddr'range) := (others=>'0');
@@ -210,6 +190,12 @@ package body fifo_lib is
     delta := unsigned(iaddr - oaddr);
 
 		case current_state is
+
+      when underflow_st =>
+        if delta = fifo_length/4 then
+          tmp:= steady_st;
+        end if;
+
       when empty_st =>
         if oen = '1' then
           tmp := underflow_st;
@@ -220,6 +206,8 @@ package body fifo_lib is
       when goempty_st =>
         if delta = 1 and oen = '1' then
           tmp :=  empty_st;
+        elsif delta = 0 then
+          tmp :=  empty_st;
         elsif delta = fifo_length/4 then
           tmp:= steady_st;
         end if;
@@ -227,42 +215,15 @@ package body fifo_lib is
       when steady_st =>
         if delta = fifo_length/4-1 then
           tmp := goempty_st;
-        end if;
-
-      when underflow_st =>
-        if delta = fifo_length/4 then
-          tmp:= steady_st;
-        end if;
-
-      when others =>
-        tmp := steady_st;
-
-    end case;
-    return tmp;
-	end async_output_state;
-
-
-  function async_input_state (
-    ien : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
-  ) return fifo_state_t is
-    variable tmp         : fifo_state_t := steady_st;
-    variable delta       : unsigned(iaddr'range) := (others=>'0');
-    variable up          : std_logic             := '0';
-    variable dn          : std_logic             := '0';
-    variable fifo_length : integer               := 2**iaddr'length;
-  begin
-    tmp   := current_state;
-    delta := unsigned(iaddr - oaddr);
-
-		case current_state is
-      when steady_st =>
-        if delta = 3*fifo_length/4 then
+        elsif delta = 3*fifo_length/4 then
           tmp:= gofull_st;
         end if;
 
       when gofull_st =>
-        if delta = fifo_length-1 and up = '1' then
+        if delta = fifo_length-1 and ien = '1' then
           tmp:= full_st;
+        elsif delta = 0 then --estourou o contador.
+            tmp:= full_st;
         elsif delta = 3*fifo_length/4-1 then
           tmp :=  steady_st;
         end if;
@@ -284,6 +245,7 @@ package body fifo_lib is
 
     end case;
     return tmp;
-	end async_input_state;
+	end async_state;
+
 
 end package body;

@@ -50,7 +50,9 @@ architecture behavioral of pulse_align is
           end if;
 
         when others      =>
-          tmp := idle;
+          if enable = '0' then
+            tmp := idle;
+          end if;
 
       end case;
       return tmp;

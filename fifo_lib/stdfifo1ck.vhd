@@ -12,7 +12,6 @@ library stdblocks;
 library stdblocks;
     use stdblocks.fifo_lib.all;
 
-
 entity stdfifo1ck is
     generic (
       ram_type  : fifo_t := blockram;
@@ -27,21 +26,14 @@ entity stdfifo1ck is
       datab_o     : out std_logic_vector(port_size-1 downto 0);
       ena_i       : in  std_logic;
       enb_i       : in  std_logic;
-      oeb_i       : in  std_logic;
       --
-      overflow_o  : out std_logic;
-      full_o      : out std_logic;
-      gofull_o    : out std_logic;
-      steady_o    : out std_logic;
-      goempty_o   : out std_logic;
-      empty_o     : out std_logic;
-      underflow_o : out std_logic
+      fifo_status_o : out fifo_status
     );
 end stdfifo1ck;
 
 architecture behavioral of stdfifo1ck is
 
-  constant debug : boolean := true;
+  constant debug : boolean := false;
 
   signal addri_cnt    : std_logic_vector(fifo_size-1 downto 0);
   signal addro_s      : std_logic_vector(fifo_size-1 downto 0);
@@ -121,13 +113,13 @@ begin
       wea_i   => ena_i
     );
 
-  overflow_o  <= '1' when fifo_mq = overflow_st  else '0';
-  full_o      <= '1' when fifo_mq = full_st      else '0';
-  gofull_o    <= '1' when fifo_mq = gofull_st    else '0';
-  steady_o    <= '1' when fifo_mq = steady_st    else '0';
-  goempty_o   <= '1' when fifo_mq = goempty_st   else '0';
-  empty_o     <= '1' when fifo_mq = empty_st     else '0';
-  underflow_o <= '1' when fifo_mq = underflow_st else '0';
+  fifo_status_o.overflow  <= '1' when fifo_mq = overflow_st  else '0';
+  fifo_status_o.full      <= '1' when fifo_mq = full_st      else '0';
+  fifo_status_o.gofull    <= '1' when fifo_mq = gofull_st    else '0';
+  fifo_status_o.steady    <= '1' when fifo_mq = steady_st    else '0';
+  fifo_status_o.goempty   <= '1' when fifo_mq = goempty_st   else '0';
+  fifo_status_o.empty     <= '1' when fifo_mq = empty_st     else '0';
+  fifo_status_o.underflow <= '1' when fifo_mq = underflow_st else '0';
 
   debug_gen : if debug generate
     signal delta_s : std_logic_vector(addri_cnt'range);

@@ -24,13 +24,6 @@ architecture behavioral of fifo_lib_tb is
   signal datab_o      : std_logic_vector(port_size-1 downto 0);
   signal ena_i        : std_logic;
   signal enb_i        : std_logic;
-  signal overflow_o   : std_logic;
-  signal full_o       : std_logic;
-  signal gofull_o     : std_logic;
-  signal steady_o     : std_logic;
-  signal goempty_o    : std_logic;
-  signal empty_o      : std_logic;
-  signal underflow_o  : std_logic;
 
   signal write_ok     : boolean;
 
@@ -39,21 +32,12 @@ architecture behavioral of fifo_lib_tb is
   signal enb2_i       : std_logic;
   signal datab2_o     : std_logic_vector(port_size-1 downto 0);
 
-  signal overflowa_o  : std_logic;
-  signal fulla_o      : std_logic;
-  signal gofulla_o    : std_logic;
-  signal steadya_o    : std_logic;
-  signal goemptya_o   : std_logic;
-  signal emptya_o     : std_logic;
-  signal underflowa_o : std_logic;
-  signal overflowb_o  : std_logic;
-  signal fullb_o      : std_logic;
-  signal gofullb_o    : std_logic;
-  signal steadyb_o    : std_logic;
-  signal goemptyb_o   : std_logic;
-  signal emptyb_o     : std_logic;
-  signal underflowb_o : std_logic;
+  signal datab3_o     : std_logic_vector(port_size-1 downto 0);
 
+  signal fifo_status_o   : fifo_status;
+  signal fifo_status3_o  : fifo_status;
+  signal fifo_status_a_o : fifo_status;
+  signal fifo_status_b_o : fifo_status;
 
 begin
 
@@ -78,6 +62,7 @@ begin
       wait until rising_edge(clk_i);
     end loop;
     ena_i   <= '0';
+    wait until rising_edge(clk_i);
     write_ok <= true;
     --read
     for j in 1 to 16 loop
@@ -116,14 +101,9 @@ begin
       datab_o     => datab_o,
       ena_i       => ena_i,
       enb_i       => enb_i,
-      oeb_i       => oeb_i,
-      overflow_o  => overflow_o,
-      full_o      => full_o,
-      gofull_o    => gofull_o,
-      steady_o    => steady_o,
-      goempty_o   => goempty_o,
-      empty_o     => empty_o,
-      underflow_o => underflow_o
+      --
+      fifo_status_o => fifo_status_o
+
     );
 
     stdfifo2ck_i : stdfifo2ck
@@ -141,21 +121,24 @@ begin
       datab_o      => datab2_o,
       ena_i        => ena_i,
       enb_i        => enb2_i,
-      overflowa_o  => overflowa_o,
-      fulla_o      => fulla_o,
-      gofulla_o    => gofulla_o,
-      steadya_o    => steadya_o,
-      goemptya_o   => goemptya_o,
-      emptya_o     => emptya_o,
-      underflowa_o => underflowa_o,
-      overflowb_o  => overflowb_o,
-      fullb_o      => fullb_o,
-      gofullb_o    => gofullb_o,
-      steadyb_o    => steadyb_o,
-      goemptyb_o   => goemptyb_o,
-      emptyb_o     => emptyb_o,
-      underflowb_o => underflowb_o
+      fifo_status_a_o => fifo_status_a_o,
+      fifo_status_b_o => fifo_status_b_o
     );
 
+
+    srfifo1ck_i : srfifo1ck
+      generic map (
+        fifo_size => fifo_size,
+        port_size => port_size
+      )
+      port map (
+        clk_i         => clk_i,
+        rst_i         => rst_i,
+        dataa_i       => dataa_i,
+        datab_o       => datab3_o,
+        ena_i         => ena_i,
+        enb_i         => enb_i,
+        fifo_status_o => fifo_status3_o
+      );
 
 end behavioral;
