@@ -6,7 +6,7 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 library expert;
-    use expert.std_logic_gray.all;
+  use expert.std_logic_expert.all;
 library stdblocks;
   use stdblocks.ram_lib.all;
   use stdblocks.fifo_lib.all;
@@ -35,23 +35,23 @@ architecture behavioral of srfifo1ck is
   constant fifo_length : integer := 2**fifo_size;
   constant addr_null   : std_logic_vector(fifo_size-1 downto 0) := (others=>'0');
 
-  signal addro_cnt     : integer range 0 to fifo_length;
+  signal addro_cnt     : std_logic_vector(fifo_size-1 downto 0) := (others=>'1');
 
-  signal fifo_mq      : fifo_state_t := steady_st;
+  signal fifo_mq       : fifo_state_t := empty_st;
 
-  type srmem_t is array (fifo_length downto 0) of std_logic_vector(port_size-1 downto 0);
+  type srmem_t is array (fifo_length-1 downto 0) of std_logic_vector(port_size-1 downto 0);
   signal data_sr       : srmem_t := (others=>(others=>'0'));
 
 
 begin
 
   --Input
-  data_sr(0) <= dataa_i;
+  --data_sr(0) <= dataa_i;
   input_p : process(clk_i)
   begin
     if clk_i'event and clk_i = '1' then
       if ena_i = '1' then
-        data_sr(data_sr'high downto 1) <= data_sr(data_sr'high-1 downto 0);
+        data_sr <= data_sr(fifo_length-2 downto 0) & dataa_i;
       end if;
     end if;
   end process;
@@ -60,21 +60,24 @@ begin
   output_p : process(clk_i, rst_i)
   begin
     if rst_i = '1' then
-      addro_cnt <= 0;
+      addro_cnt <= (others=>'1');
     elsif clk_i'event and clk_i = '1' then
       if ena_i = '1' and enb_i = '0' then
-        if addro_cnt < fifo_length then
-          addro_cnt    <= addro_cnt + 1;
+        if fifo_mq  = empty_st then
+          addro_cnt <= addro_cnt + 1;
+        elsif addro_cnt < fifo_length then
+          addro_cnt <= addro_cnt + 1;
         end if;
       elsif ena_i = '0' and enb_i = '1' then
-        if addro_cnt > 0 then
-          addro_cnt    <= addro_cnt - 1;
+        if fifo_mq  = empty_st then
+        elsif addro_cnt > 0 then
+          addro_cnt <= addro_cnt - 1;
         end if;
       end if;
     end if;
   end process;
 
-  datab_o <= data_sr(addro_cnt);
+  datab_o <= data_sr(to_integer(addro_cnt));
 
   control_p : process(clk_i, rst_i)
     variable addro_v : std_logic_vector(fifo_size-1 downto 0);
@@ -82,7 +85,7 @@ begin
     if rst_i = '1' then
       fifo_mq <= empty_st;
     elsif clk_i'event and clk_i = '1' then
-      addro_v := std_logic_vector(to_signed(addro_cnt,fifo_size));
+      addro_v := std_logic_vector(addro_cnt) + 1;
       fifo_mq <= sync_state(ena_i,enb_i,addro_v,addr_null,fifo_mq);
     end if;
   end process;
@@ -97,9 +100,9 @@ begin
   fifo_status_o.underflow <= '1' when fifo_mq = underflow_st else '0';
 
   debug_gen : if debug generate
-    signal delta_s : std_logic_vector(addr_null'range);
+    signal delta_s : std_logic_vector(addro_cnt'range);
   begin
-    delta_s <= std_logic_vector(to_signed(addro_cnt,fifo_size));
+    delta_s <= std_logic_vector(addro_cnt);
   end generate;
 
 end behavioral;
