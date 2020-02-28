@@ -84,8 +84,6 @@ package fifo_lib is
     );
   end component srfifo1ck;
 
-
-
 end package;
 
 package body fifo_lib is
@@ -246,6 +244,138 @@ package body fifo_lib is
     end case;
     return tmp;
 	end async_state;
+
+---------------------------------------------------------------------------------------------------------
+record fifo_config_rec is
+  ram_type     :  fifo_t;
+  fifo_size    : integer;
+  tdata_size   : integer;
+  tdest_size   : integer;
+  tuser_size   : integer;
+  packet_mode  : boolean;
+  tuser_enable : boolean;
+  tdest_enable : boolean;
+  tlast_enable : boolean;
+  cut_through  : boolean;
+  sync_mode    : boolean;
+end record;
+
+  function header_size_f (
+    param   : fifo_config_rec
+  )
+  return integer is
+      variable tmp : integer;
+  begin
+    tmp := 0;
+    if not param.packet_mode then
+      if param.tlast_enable then
+        tmp := 1;
+      end if;
+      if param.tuser_enable then
+        tmp := param.tuser_size + tmp;
+      end if;
+      if param.tdest_enable then
+        tmp := tmp + param.tdest_size;
+      end if;
+    end if;
+    return tmp;
+  end header_size_f;
+
+  function fifo_size_f (
+    param   : fifo_config_rec
+  )
+  return integer is
+      variable tmp : integer;
+  begin
+    tmp := param.tdata_size;
+    if not param.packet_mode then
+      tmp := tmp + param.header_size;
+    end if;
+    return tmp;
+  end fifo_size_f;
+
+  record fifo_data_rec is
+    tdest  : std_logic_vector;
+    tdata  : std_logic_vector;
+    tuser  : std_logic_vector;
+    tlast  : std_logic;
+  end record;
+
+
+  procedure data_bus_in (
+    data      : in fifo_data_rec;
+    param     : in fifo_config_rec;
+    fifo_data : out std_logic_vector;
+    head_data : out std_logic_vector
+  ) is
+    variable head_data_v : std_logic_vector(header_size-1 doento 0);
+  begin
+  --
+    if param.tuser_enable then
+      head_data_v := head_data_v sll param.tuser_size;
+      head_data_v(tuser'range) := data.tuser;
+    end if;
+    if param.tdest_enable then
+      head_data_v := head_data_v sll param.tdest_size;
+      head_data_v(tdest'range) := data.tdest;
+    end if;
+
+    if param.packet_mode or param.tlast_enable then
+      if param.packet_mode then
+        head_data <= head_data_v
+        fifo_data <= data.tlast & data.tdata;
+      else
+        head_data <= (others=>'0');
+        fifo_data <= data.tlast & head_data_v & data.tdata;
+      end if;
+    else
+      if param.packet_mode then
+        head_data <= head_data_v
+        fifo_data <= data.tdata;
+      else
+        head_data <= (others=>'0');
+        fifo_data <= head_data_v & data.tdata;
+      end if;
+    end if;
+  end data_bus_in;
+
+  procedure data_bus_out (
+    data      : out fifo_data_rec;
+    param     : in fifo_config_rec;
+    fifo_data : in std_logic_vector;
+    head_data : in std_logic_vector
+  ) is
+    variable head_data_v : std_logic_vector(header_size-1 downto 0);
+  begin
+    data.tdata  <= (others=>'0');
+    data.tdest  <= (others=>'0');
+    data.tuser  <= (others=>'0');
+    data.tlast  <= '0';
+    head_data_v := (others=>'0');
+
+    if param.packet_mode then
+      data.tdata  <= fifo_data;
+      head_data_v := head_data
+    else
+      data.tdata  <= fifo_data(param.tdata_size-1 downto 0);
+      head_data_v := fifo_data(fifo_data'high downto param.tdata_size);
+    end if;
+
+    if param.tdest_enable then
+      data.tdest  <= head_data_v(tdest'range);
+      head_data_v := head_data_v srl param.tdest_size;
+    end if;
+
+    if param.tuser_enable then
+      data.tuser  <= head_data_v(tuser'range);
+      head_data_v := head_data_v srl param.tuser_size;
+    end if;
+
+    if param.packet_mode or param.tlast_enable then
+      data.tlast <= head_data_v(0);
+    end if;
+
+  end data_bus_out;
 
 
 end package body;
