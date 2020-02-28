@@ -18,9 +18,6 @@ library stdblocks;
 
 entity axis_reg is
     generic (
-      ram_type        :  fifo_t := blockram;
-      fifo_size       : integer := 8;
-      min_packet_size : integer := 8;
       tdata_size      : integer := 8;
       tdest_size      : integer := 8;
       tuser_size      : integer := 8;
@@ -45,29 +42,27 @@ entity axis_reg is
       m_tdest_o    : out std_logic_vector(tdest_size-1 downto 0);
       m_tready_i   : in  std_logic;
       m_tvalid_o   : out std_logic;
-      m_tlast_o    : out std_logic;
-
-      fifo_status_a_o : out fifo_status;
-      fifo_status_b_o : out fifo_status
+      m_tlast_o    : out std_logic
     );
 end axis_reg;
 
 architecture behavioral of axis_reg is
 
-
-
 begin
 
-process()
-begin
+  s_tready_o <= m_tready_i;
 
-
-if busy_s then
-elsif en_i_s = '1' then
-  s_tdata_o <=
-
-
-
-end process;
+  process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if m_tready_i = '1' then
+        m_tvalid_o <= s_tvalid_i;
+        m_tdata_o  <= s_tdata_i;
+        m_tuser_o  <= s_tuser_i;
+        m_tdest_o  <= s_tdest_i;
+        m_tlast_o  <= s_tlast_i;
+      end if;
+    end if;
+  end process;
 
 end behavioral;
