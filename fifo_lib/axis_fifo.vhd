@@ -43,9 +43,9 @@ entity axis_fifo is
       s_tvalid_i   : in  std_logic;
       s_tlast_i    : in  std_logic;
 
-      s_tdata_o    : out std_logic_vector(tdata_size-1 downto 0);
-      s_tuser_o    : out std_logic_vector(tuser_size-1 downto 0);
-      s_tdest_o    : out std_logic_vector(tdest_size-1 downto 0);
+      m_tdata_o    : out std_logic_vector(tdata_size-1 downto 0);
+      m_tuser_o    : out std_logic_vector(tuser_size-1 downto 0);
+      m_tdest_o    : out std_logic_vector(tdest_size-1 downto 0);
       m_tready_i   : in  std_logic;
       m_tvalid_o   : out std_logic;
       m_tlast_o    : out std_logic;
