@@ -246,7 +246,7 @@ package body fifo_lib is
 	end async_state;
 
 ---------------------------------------------------------------------------------------------------------
-record fifo_config_rec is
+type fifo_config_rec is record
   ram_type     :  fifo_t;
   fifo_size    : integer;
   tdata_size   : integer;
@@ -289,18 +289,17 @@ end record;
   begin
     tmp := param.tdata_size;
     if not param.packet_mode then
-      tmp := tmp + param.header_size;
+      tmp := tmp + header_size_f(param);
     end if;
     return tmp;
   end fifo_size_f;
 
-  record fifo_data_rec is
+  type fifo_data_rec is record
     tdest  : std_logic_vector;
     tdata  : std_logic_vector;
     tuser  : std_logic_vector;
     tlast  : std_logic;
   end record;
-
 
   procedure data_bus_in (
     data      : in fifo_data_rec;
@@ -308,7 +307,7 @@ end record;
     fifo_data : out std_logic_vector;
     head_data : out std_logic_vector
   ) is
-    variable head_data_v : std_logic_vector(header_size-1 doento 0);
+    variable head_data_v : std_logic_vector(header_size_f(param) downto 0);
   begin
   --
     if param.tuser_enable then

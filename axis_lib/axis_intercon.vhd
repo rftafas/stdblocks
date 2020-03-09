@@ -11,12 +11,14 @@ library expert;
 
 entity axis_intercon is
     generic (
-    tdata_size   : integer := 8;
-    tdest_size   : integer := 8;
-    tuser_size   : integer := 8;
-    select_auto  : boolean := false;
-    switch_tlast : boolean := false;
-    max_tx_size  : integer := 10
+      tdata_size   : integer := 8;
+      tdest_size   : integer := 8;
+      tuser_size   : integer := 8;
+      select_auto  : boolean := false;
+      switch_tlast : boolean := false;
+      interleaving : boolean := false;
+      max_tx_size  : integer := 10;
+      mode         : integer := 10
     );
     port (
       --general
@@ -61,7 +63,9 @@ architecture behavioral of axis_intercon is
       tuser_size   : integer := 8;
       select_auto  : boolean := false;
       switch_tlast : boolean := false;
-      max_tx_size  : integer := 10
+      interleaving : boolean := false;
+      max_tx_size  : integer := 10;
+      mode         : integer := 10
       );
     port (
       --general
@@ -107,14 +111,16 @@ begin
 
 
   mux_gen : for j in number_masters-1 downto 0 generate
-    axis_demux_u : axis_mux
+    axis_mux_u : axis_mux
       generic map (
         tdata_size   => tdata_size,
         tdest_size   => tdest_size,
         tuser_size   => tuser_size,
         select_auto  => select_auto,
         switch_tlast => switch_tlast,
-        max_tx_size  => max_tx_size
+        interleaving => interleaving,
+        max_tx_size  => max_tx_size,
+        mode         => mode
       )
       port map (
         clk_i      => clk_i,

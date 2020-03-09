@@ -23,7 +23,7 @@ entity priority_engine is
       request_i    : in  std_logic_vector(n_elements-1 downto 0);
       ack_i        : in  std_logic_vector(n_elements-1 downto 0);
       grant_o      : out std_logic_vector(n_elements-1 downto 0);
-      index_o      : out integer;
+      index_o      : out integer
     );
 end priority_engine;
 
@@ -95,6 +95,7 @@ begin
       -- it will offer the channel according a moving priority. It resonably ensures that at
       -- least once per cycle a channel has priority. Unfortunately it makes a mess on channel order.
       process(all)
+        variable locked : boolean := false;
       begin
         if rising_edge(clk_i) then
           if locked and ack_i(moving_index_s) = '1' then
@@ -117,6 +118,7 @@ begin
       -- priority is given to channels that are not trasmitting. this ensures no starvation.
       -- Packet order is lost.
       process(all)
+        variable locked : boolean := false;
       begin
         if rising_edge(clk_i) then
           if locked and ack_i(moving_index_s) = '1' then
@@ -138,13 +140,14 @@ begin
         -- fixed priority. channel 0 is the least to be transmitted.
         -- channels will starve if a higher priority channel never lets them get the channel.
         process(all)
+            variable locked : boolean := false;
         begin
           if rising_edge(clk_i) then
-            lock := false;
+            locked := false;
             for j in n_elements-1 downto 0 loop
               if request_i(j) = '1' then
                   grant_o(j) <= '1';
-                  lock := true;
+                  locked := true;
               else
                 grant_o(j) <= '0';
               end if;
@@ -153,41 +156,6 @@ begin
         end process;
 
     end generate mode_gen;
-
-
-end behavioral;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 end behavioral;
