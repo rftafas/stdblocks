@@ -1,10 +1,12 @@
 import sys
 import os
 
+tabsize = 2
+
 def indent(value):
     txt = ""
-    for j in range(value):
-        txt = txt + "  "
+    for j in range(tabsize * value):
+        txt = txt + " "
     return txt;
 
 def create_axis_port( port_name, type, number, indsize):
@@ -27,6 +29,16 @@ def create_axis_port( port_name, type, number, indsize):
             code = code + indent(indsize) + port_name + ("%d_tready_o : out std_logic;\r\n" % j)
             code = code + indent(indsize) + port_name + ("%d_tvalid_i : in  std_logic;\r\n" % j)
             code = code + indent(indsize) + port_name + ("%d_tlast_i  : in  std_logic;\r\n" % j)
+    return code
+
+def create_axis_signal( signal_name, size, indsize):
+    code = ""
+    code = code + indent(indsize) + ("signal %s_tdata_s  :  axi_tdata_array(%s-1 downto 0);\r\n" % (signal_name,size))
+    code = code + indent(indsize) + ("signal %s_tuser_s  :  axi_tuser_array(%s-1 downto 0);\r\n" % (signal_name,size))
+    code = code + indent(indsize) + ("signal %s_tdest_s  :  axi_tdest_array(%s-1 downto 0);\r\n" % (signal_name,size))
+    code = code + indent(indsize) + ("signal %s_tvalid_s : std_logic_vector(%s-1 downto 0);\r\n" % (signal_name,size))
+    code = code + indent(indsize) + ("signal %s_tlast_s  : std_logic_vector(%s-1 downto 0);\r\n" % (signal_name,size))
+    code = code + indent(indsize) + ("signal %s_tready_s : std_logic_vector(%s-1 downto 0);\r\n" % (signal_name,size))
     return code
 
 def create_port_connection( port_name, type, number_elements, indsize):
@@ -53,6 +65,40 @@ def create_port_connection( port_name, type, number_elements, indsize):
             code = code + indent(indsize) + ("%s%d_tuser_o  <= m_tuser_s(%d);\r\n"  % (port_name, j, j))
             code = code + indent(indsize) + ("%s%d_tdest_o  <= m_tdest_s(%d);\r\n"  % (port_name, j, j))
             code = code + indent(indsize) + ("\r\n")
+    return code
+
+def create_instance_connection( port_name, signal_name, signal_sufix, type, indsize):
+    code = ""
+    if ("slave" in type):
+        code = code + indent(indsize) + ("--Slave %s\r\n" % port_name)
+        code = code + indent(indsize) + ("%s_tvalid_i => %s_tvalid_s%s,\r\n" % (port_name, signal_name, signal_sufix))
+        code = code + indent(indsize) + ("%s_tlast_i  =>  %s_tlast_s%s,\r\n" % (port_name, signal_name, signal_sufix))
+        code = code + indent(indsize) + ("%s_tready_o => %s_tready_s%s,\r\n" % (port_name, signal_name, signal_sufix))
+        code = code + indent(indsize) + ("%s_tdata_i  =>  %s_tdata_s%s,\r\n" % (port_name, signal_name, signal_sufix))
+        code = code + indent(indsize) + ("%s_tuser_i  =>  %s_tuser_s%s,\r\n" % (port_name, signal_name, signal_sufix))
+        code = code + indent(indsize) + ("%s_tdest_i  =>  %s_tdest_s%s,\r\n" % (port_name, signal_name, signal_sufix))
+        code = code + indent(indsize) + ("\r\n")
+    else:
+        code = code + indent(indsize) + ("--Master %s\r\n" % port_name)
+        code = code + indent(indsize) + ("%s_tvalid_o => %s_tvalid_s%s,\r\n" % (port_name, signal_name, signal_sufix))
+        code = code + indent(indsize) + ("%s_tlast_o  =>  %s_tlast_s%s,\r\n" % (port_name, signal_name, signal_sufix))
+        code = code + indent(indsize) + ("%s_tready_i => %s_tready_s%s,\r\n" % (port_name, signal_name, signal_sufix))
+        code = code + indent(indsize) + ("%s_tdata_o  =>  %s_tdata_s%s,\r\n" % (port_name, signal_name, signal_sufix))
+        code = code + indent(indsize) + ("%s_tuser_o  =>  %s_tuser_s%s,\r\n" % (port_name, signal_name, signal_sufix))
+        code = code + indent(indsize) + ("%s_tdest_o  =>  %s_tdest_s%s,\r\n" % (port_name, signal_name, signal_sufix))
+        code = code + indent(indsize) + ("\r\n")
+    return code
+
+def create_signal_connection( signala_name, signala_sufix, signalb_name, signalb_sufix, indsize):
+    code = ""
+    code = code + indent(indsize) + ("--Connext %s to %s\r\n" % (signala_name,signalb_name))
+    code = code + indent(indsize) + ("%s_tvalid_s%s <= %s_tvalid_s%s;\r\n" % (signala_name, signala_sufix, signalb_name, signalb_sufix))
+    code = code + indent(indsize) + ("%s_tlast_s%s  <=  %s_tlast_s%s;\r\n" % (signala_name, signala_sufix, signalb_name, signalb_sufix))
+    code = code + indent(indsize) + ("%s_tready_s%s <= %s_tready_s%s;\r\n" % (signalb_name, signalb_sufix, signala_name, signala_sufix))
+    code = code + indent(indsize) + ("%s_tdata_s%s  <=  %s_tdata_s%s;\r\n" % (signala_name, signala_sufix, signalb_name, signalb_sufix))
+    code = code + indent(indsize) + ("%s_tuser_s%s  <=  %s_tuser_s%s;\r\n" % (signala_name, signala_sufix, signalb_name, signalb_sufix))
+    code = code + indent(indsize) + ("%s_tdest_s%s  <=  %s_tdest_s%s;\r\n" % (signala_name, signala_sufix, signalb_name, signalb_sufix))
+    code = code + indent(indsize) + ("\r\n")
     return code
 
 def axi_custom( entity_name, number_slaves, number_masters):
@@ -127,18 +173,18 @@ def axi_concat( entity_name, number_elements):
             output_file.write(line)
     return True;
 
-def axis_switch ( entity_name, number_elements):
+def axis_mux ( entity_name, number_elements):
     #check for axis_concat existance
     output_file_name = "output/"+entity_name+".vhd"
     output_file = open(output_file_name,"w+")
 
-    concat_source = open("axis_switch.vhd","r")
+    concat_source = open("axis_mux.vhd","r")
     code_lines = concat_source.readlines()
 
     for line in code_lines:
-        if ("entity axis_switch is" in line):
+        if ("entity axis_mux is" in line):
             output_file.write("entity %s is\r\n" % entity_name)
-        elif ("end axis_switch;" in line):
+        elif ("end axis_mux;" in line):
             output_file.write("end %s;\r\n" % entity_name)
         elif ("architecture" in line):
             output_file.write("architecture behavioral of %s is\r\n" % entity_name)
@@ -168,18 +214,18 @@ def axis_switch ( entity_name, number_elements):
             output_file.write(line)
     return True;
 
-def axis_broadcast ( entity_name, number_elements):
+def axis_demux ( entity_name, number_elements):
     #check for axis_concat existance
     output_file_name = "output/"+entity_name+".vhd"
     output_file = open(output_file_name,"w+")
 
-    concat_source = open("axis_broadcast.vhd","r")
+    concat_source = open("axis_demux.vhd","r")
     code_lines = concat_source.readlines()
 
     for line in code_lines:
-        if ("entity axis_broadcast is" in line):
+        if ("entity axis_demux is" in line):
             output_file.write("entity %s is\r\n" % entity_name)
-        elif ("end axis_broadcast;" in line):
+        elif ("end axis_demux;" in line):
             output_file.write("end %s;\r\n" % entity_name)
         elif ("architecture" in line):
             output_file.write("architecture behavioral of %s is\r\n" % entity_name)
@@ -188,23 +234,7 @@ def axis_broadcast ( entity_name, number_elements):
         elif ("--python constant code" in line):
             output_file.write("  constant number_ports : integer := %d;\r\n" % number_elements)
         elif ("--array connections" in line):
-            for j in range(number_elements):
-                output_file.write(indent(3)+"s_tvalid_s(%d) <= s%d_tvalid_i;\r\n" % (j, j))
-
-            output_file.write("\r\n")
-            for j in range(number_elements):
-                output_file.write(indent(3)+"s_tlast_s(%d)  <= s%d_tlast_i;\r\n" % (j, j))
-
-            output_file.write("\r\n")
-            for j in range(number_elements):
-                output_file.write(indent(3)+"axi_tdata_s(%d) <= s%d_tdata_i;\r\n" % (j,j))
-                output_file.write(indent(3)+"axi_tuser_s(%d) <= s%d_tuser_i;\r\n" % (j,j))
-                output_file.write(indent(3)+"axi_tdest_s(%d) <= s%d_tdest_i;\r\n" % (j,j))
-
-        elif ("--ready connections" in line):
-            for j in range(number_elements):
-                output_file.write(indent(1)+"s%d_tready_o   <= s_tready_s(%d) and m_tready_i;\r\n" % (j,j))
-
+            output_file.write(create_port_connection("m","master",number_masters,1))
         else:
             output_file.write(line)
     return True;
@@ -253,16 +283,19 @@ def axis_aligner ( entity_name, number_elements):
 
 def axis_intercon ( entity_name, number_slaves, number_masters):
     #first we create inernal needed block.
-    internal_name = entity_name+"_switch"
-    if (not axis_switch(internal_name,number_slaves)):
-        print("Error, cannot create internal switch.\r\n")
+    internal_name = entity_name+"_mux"
+    if (not axis_mux(internal_name,number_slaves)):
+        print("Error, cannot create internal mux.\r\n")
+        sys.exit()
+    internal_name = entity_name+"_demux"
+    if (not axis_demux(internal_name,number_masters)):
+        print("Error, cannot create internal demux.\r\n")
         sys.exit()
 
     output_file_name = "output/"+entity_name+".vhd"
     output_file = open(output_file_name,"w+")
 
     concat_source = open("axis_intercon.vhd","r")
-
 
     code_lines = concat_source.readlines()
 
@@ -276,22 +309,39 @@ def axis_intercon ( entity_name, number_slaves, number_masters):
         elif ("--python port code" in line):
             output_file.write(create_axis_port("m","master",number_masters,3))
             output_file.write(create_axis_port("s","slave",number_slaves,3))
-        elif ("--component slaves port code" in line):
-            output_file.write(indent(4)+create_axis_port("s","slave",number_slaves,4))
+        elif ("component axis_demux is" in line):
+            output_file.write(indent(1)+"component %s_demux is\r\n" % entity_name)
+        elif ("component axis_mux is" in line):
+            output_file.write(indent(1)+"component %s_mux is\r\n" % entity_name)
+        elif ("--number of mux ports" in line):
+            output_file.write(create_axis_port("s","slave",number_slaves,3))
+        elif ("--number of demux ports" in line):
+            output_file.write(create_axis_port("m","master",number_masters,3))
         elif ("--python constant code" in line):
             output_file.write("  constant number_masters : integer := %d;\r\n" % number_masters)
-            output_file.write("  constant number_slaves : integer := %d;\r\n" % number_slaves)
+            output_file.write("  constant number_slaves  : integer := %d;\r\n" % number_slaves)
+        elif ("--signal creation" in line):
+            for j in range(number_masters):
+                output_file.write(create_axis_signal("demux%s" % j, "number_slaves", 1))
+            output_file.write("\r\n")
+            for j in range(number_slaves):
+                output_file.write(create_axis_signal("mux%s" % j, "number_masters", 1))
         elif ("--array connections" in line):
             output_file.write(create_port_connection("m","master",number_masters,1))
             output_file.write(create_port_connection("s","slave",number_slaves,1))
-        elif ("--switch instance slaves" in line):
+            for j in range(number_masters):
+                for k in range(number_slaves):
+                    output_file.write(create_signal_connection("demux%s" % j,"(%s)" % k,"mux%s" % k,"(%s)" % j,1))
+        elif ("axis_mux_u : axis_mux" in line):
+            output_file.write(indent(2)+"%s_mux_u : %s_mux\r\n" % (entity_name,entity_name))
+        elif ("axis_demux_u : axis_demux" in line):
+            output_file.write(indent(2)+"%s_demux_u : %s_demux\r\n" % (entity_name,entity_name))
+        elif ("--mux instance" in line):
             for j in range(number_slaves):
-                output_file.write(indent(5)+"s%d_tdata_i  => s_tdata_s(%d),\r\n" % (j,j))
-                output_file.write(indent(5)+"s%d_tdest_i  => s_tdest_s(%d),\r\n" % (j,j))
-                output_file.write(indent(5)+"s%d_tuser_i  => s_tuser_s(%d),\r\n" % (j,j))
-                output_file.write(indent(5)+"s%d_tlast_i  => s_tlast_s(%d),\r\n" % (j,j))
-                output_file.write(indent(5)+"s%d_tvalid_i => valid_array_s(j)(%d),\r\n" % (j,j))
-                output_file.write(indent(5)+"s%d_tready_o => valid_ready_s(j)(%d),\r\n" % (j,j))
+                output_file.write(create_instance_connection("s%s" % j,"mux%s" % j,"(j)","slave",4))
+        elif ("--demux instance" in line):
+            for j in range(number_masters):
+                output_file.write(create_instance_connection("m%s" % j,"demux%s" % j,"(j)","master",4))
         else:
             output_file.write(line)
     return True;
@@ -357,10 +407,14 @@ elif (command == "concat"):
     entity_name = sys.argv[2]
     number_slaves = int(sys.argv[3])
     success = axi_concat(entity_name,number_slaves)
-elif (command == "switch"):
+elif (command == "mux"):
     entity_name = sys.argv[2]
     number_slaves = int(sys.argv[3])
-    success = axis_switch(entity_name,number_slaves)
+    success = axis_mux(entity_name,number_slaves)
+elif (command == "demux"):
+    entity_name = sys.argv[2]
+    number_slaves = int(sys.argv[3])
+    success = axis_demux(entity_name,number_slaves)
 elif (command == "aligner"):
     entity_name = sys.argv[2]
     number_slaves = int(sys.argv[3])

@@ -30,28 +30,52 @@ architecture behavioral of axis_intercon is
 
   --python constant code
 
-  component axis_switch is
-      generic (
-        tdata_size   : integer := 8;
-        tdest_size   : integer := 8;
-        tuser_size   : integer := 8;
-        select_auto  : boolean := false;
-        switch_tlast : boolean := false;
-        max_tx_size  : integer := 10
+  component axis_demux is
+    generic (
+      tdata_size   : integer := 8;
+      tdest_size   : integer := 8;
+      tuser_size   : integer := 8;
+      select_auto  : boolean := false;
+      switch_tlast : boolean := false;
+      max_tx_size  : integer := 10
+    );
+    port (
+      --general
+      clk_i      : in  std_logic;
+      rst_i      : in  std_logic;
+      --number of demux ports
+      --AXIS Master port
+      s_tdata_i  : in  std_logic_vector(tdata_size-1 downto 0);
+      s_tuser_i  : in  std_logic_vector(tuser_size-1 downto 0);
+      s_tdest_i  : in  std_logic_vector(tdest_size-1 downto 0);
+      s_tready_o : out std_logic;
+      s_tvalid_i : in  std_logic;
+      s_tlast_i  : in  std_logic
+    );
+  end component;
+
+  component axis_mux is
+    generic (
+      tdata_size   : integer := 8;
+      tdest_size   : integer := 8;
+      tuser_size   : integer := 8;
+      select_auto  : boolean := false;
+      switch_tlast : boolean := false;
+      max_tx_size  : integer := 10
       );
-      port (
-        --general
-        clk_i       : in  std_logic;
-        rst_i       : in  std_logic;
-        --component slaves port code
-        --AXIS Master port
-        m_tdata_o    : out std_logic_vector(tdata_size-1 downto 0);
-        m_tuser_o    : out std_logic_vector(tuser_size-1 downto 0);
-        m_tdest_o    : out std_logic_vector(tdest_size-1 downto 0);
-        m_tready_i   : in  std_logic;
-        m_tvalid_o   : out std_logic;
-        m_tlast_o    : out std_logic
-      );
+    port (
+      --general
+      clk_i       : in  std_logic;
+      rst_i       : in  std_logic;
+      --number of mux ports
+      --AXIS Master port
+      m_tdata_o    : out std_logic_vector(tdata_size-1 downto 0);
+      m_tuser_o    : out std_logic_vector(tuser_size-1 downto 0);
+      m_tdest_o    : out std_logic_vector(tdest_size-1 downto 0);
+      m_tready_i   : in  std_logic;
+      m_tvalid_o   : out std_logic;
+      m_tlast_o    : out std_logic
+    );
   end component;
 
   type axi_tdata_array is array (natural range <>) of std_logic_vector(tdata_size-1 downto 0);
@@ -60,59 +84,74 @@ architecture behavioral of axis_intercon is
 
   type axi_signal_array is array (natural range <>) of std_logic_vector(number_slaves-1 downto 0);
 
-  signal s_tdata_s  : axi_tdata_array(number_slaves-1 downto 0);
-  signal s_tuser_s  : axi_tuser_array(number_slaves-1 downto 0);
-  signal s_tdest_s  : axi_tdest_array(number_slaves-1 downto 0);
+  --connection to entity port
+  signal s_tdata_s  :  axi_tdata_array(number_slaves-1 downto 0);
+  signal s_tuser_s  :  axi_tuser_array(number_slaves-1 downto 0);
+  signal s_tdest_s  :  axi_tdest_array(number_slaves-1 downto 0);
   signal s_tvalid_s : std_logic_vector(number_slaves-1 downto 0);
   signal s_tlast_s  : std_logic_vector(number_slaves-1 downto 0);
   signal s_tready_s : std_logic_vector(number_slaves-1 downto 0);
 
-  signal m_tdata_s  : axi_tdata_array(number_masters-1 downto 0);
-  signal m_tuser_s  : axi_tuser_array(number_masters-1 downto 0);
-  signal m_tdest_s  : axi_tdest_array(number_masters-1 downto 0);
+  signal m_tdata_s  :  axi_tdata_array(number_masters-1 downto 0);
+  signal m_tuser_s  :  axi_tuser_array(number_masters-1 downto 0);
+  signal m_tdest_s  :  axi_tdest_array(number_masters-1 downto 0);
   signal m_tvalid_s : std_logic_vector(number_masters-1 downto 0);
   signal m_tlast_s  : std_logic_vector(number_masters-1 downto 0);
   signal m_tready_s : std_logic_vector(number_masters-1 downto 0);
 
-  signal valid_array_s : axi_signal_array(number_masters-1 downto 0);
-  signal ready_array_s : axi_signal_array(number_masters-1 downto 0);
+  --signal creation
 
 begin
 
     --array connections
 
-  valid_master_gen : for j in number_masters-1 downto 0 generate
-    valid_slave_gen : for k in number_masters-1 downto 0 generate
-      valid_array_s(j)(k) <= s_tvalid_s(k) when to_integer(s_tdest_s(j)) = j else '0';
-    end generate;
+
+  mux_gen : for j in number_masters-1 downto 0 generate
+    axis_demux_u : axis_mux
+      generic map (
+        tdata_size   => tdata_size,
+        tdest_size   => tdest_size,
+        tuser_size   => tuser_size,
+        select_auto  => select_auto,
+        switch_tlast => switch_tlast,
+        max_tx_size  => max_tx_size
+      )
+      port map (
+        clk_i      => clk_i,
+        rst_i      => rst_i,
+        --mux instance
+        m_tdata_o  => m_tdata_s(j),
+        m_tuser_o  => m_tuser_s(j),
+        m_tdest_o  => m_tdest_s(j),
+        m_tready_i => m_tready_s(j),
+        m_tvalid_o => m_tvalid_s(j),
+        m_tlast_o  => m_tlast_s(j)
+      );
+
   end generate;
 
-  ready_slave_gen : for k in number_masters-1 downto 0 generate
-    s_tready_s(j) <= valid_ready_s(to_integer(s_tdest_s(j)))(j);
-  end generate;
+  demux_gen : for j in number_slaves-1 downto 0 generate
 
-  ack_gen : for j in number_masters-1 downto 0 generate
-
-      axis_switch_u : axis_switch
-        generic map (
-          tdata_size   => tdata_size,
-          tdest_size   => tdest_size,
-          tuser_size   => tuser_size,
-          select_auto  => select_auto,
-          switch_tlast => switch_tlast,
-          max_tx_size  => max_tx_size
-        )
-        port map (
-          clk_i      => clk_i,
-          rst_i      => rst_i,
-          --switch instance slaves
-          m_tdata_o  => m_tdata_s(j),
-          m_tuser_o  => m_tuser_s(j),
-          m_tdest_o  => m_tdest_s(j),
-          m_tready_i => m_tready_s(j),
-          m_tvalid_o => m_tvalid_s(j),
-          m_tlast_o  => m_tlast_s(j)
-        );
+    axis_demux_u : axis_demux
+      generic map (
+        tdata_size   => tdata_size,
+        tdest_size   => tdest_size,
+        tuser_size   => tuser_size,
+        select_auto  => select_auto,
+        switch_tlast => switch_tlast,
+        max_tx_size  => max_tx_size
+      )
+      port map (
+        clk_i      => clk_i,
+        rst_i      => rst_i,
+        --demux instance
+        s_tdata_i  => s_tdata_s(j),
+        s_tuser_i  => s_tuser_s(j),
+        s_tdest_i  => s_tdest_s(j),
+        s_tready_o => s_tready_s(j),
+        s_tvalid_i => s_tvalid_s(j),
+        s_tlast_i  => s_tlast_s(j)
+      );
 
     end generate;
 
