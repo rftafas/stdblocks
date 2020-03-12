@@ -194,17 +194,17 @@ def axis_mux ( entity_name, number_elements):
             output_file.write("  constant number_ports : integer := %d;\r\n" % number_elements)
         elif ("--array connections" in line):
             for j in range(number_elements):
-                output_file.write(indent(3)+"s_tvalid_s(%d) <= s%d_tvalid_i;\r\n" % (j, j))
+                output_file.write(indent(1)+"s_tvalid_s(%d) <= s%d_tvalid_i;\r\n" % (j, j))
 
             output_file.write("\r\n")
             for j in range(number_elements):
-                output_file.write(indent(3)+"s_tlast_s(%d)  <= s%d_tlast_i;\r\n" % (j, j))
+                output_file.write(indent(1)+"s_tlast_s(%d)  <= s%d_tlast_i;\r\n" % (j, j))
 
             output_file.write("\r\n")
             for j in range(number_elements):
-                output_file.write(indent(3)+"axi_tdata_s(%d) <= s%d_tdata_i;\r\n" % (j,j))
-                output_file.write(indent(3)+"axi_tuser_s(%d) <= s%d_tuser_i;\r\n" % (j,j))
-                output_file.write(indent(3)+"axi_tdest_s(%d) <= s%d_tdest_i;\r\n" % (j,j))
+                output_file.write(indent(1)+"axi_tdata_s(%d) <= s%d_tdata_i;\r\n" % (j,j))
+                output_file.write(indent(1)+"axi_tuser_s(%d) <= s%d_tuser_i;\r\n" % (j,j))
+                output_file.write(indent(1)+"axi_tdest_s(%d) <= s%d_tdest_i;\r\n" % (j,j))
 
         elif ("--ready connections" in line):
             for j in range(number_elements):

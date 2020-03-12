@@ -33,13 +33,6 @@ entity intercon2_demux is
       m1_tready_i   : in  std_logic;
       m1_tvalid_o   : out std_logic;
       m1_tlast_o    : out std_logic;
-      --AXIS Master Port 2
-      m2_tdata_o    : out std_logic_vector(tdata_size-1 downto 0);
-      m2_tuser_o    : out std_logic_vector(tuser_size-1 downto 0);
-      m2_tdest_o    : out std_logic_vector(tdest_size-1 downto 0);
-      m2_tready_i   : in  std_logic;
-      m2_tvalid_o   : out std_logic;
-      m2_tlast_o    : out std_logic;
       --AXIS Slave Port
       s_tdata_i  : in  std_logic_vector(tdata_size-1 downto 0);
       s_tuser_i  : in  std_logic_vector(tuser_size-1 downto 0);
@@ -52,7 +45,7 @@ end intercon2_demux;
 
 architecture behavioral of intercon2_demux is
 
-  constant number_ports : integer := 3;
+  constant number_ports : integer := 2;
 
   constant all1_c : std_logic_vector(number_masters-1 downto 0) := (others=>'1');
 
@@ -86,14 +79,6 @@ begin
   m1_tdata_o  <= m_tdata_s(1);
   m1_tuser_o  <= m_tuser_s(1);
   m1_tdest_o  <= m_tdest_s(1);
-  
-  --Master 2
-  m2_tvalid_o <= m_tvalid_s(2);
-  m2_tlast_o  <= m_tlast_s(2);
-  m_tready_s(2) <= m2_tready_i;
-  m2_tdata_o  <= m_tdata_s(2);
-  m2_tuser_o  <= m_tuser_s(2);
-  m2_tdest_o  <= m_tdest_s(2);
   
 
   out_gen : for j in number_masters-1 downto 0 generate

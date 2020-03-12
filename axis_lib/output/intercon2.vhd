@@ -38,13 +38,6 @@ entity intercon2 is
       m1_tready_i   : in  std_logic;
       m1_tvalid_o   : out std_logic;
       m1_tlast_o    : out std_logic;
-      --AXIS Master Port 2
-      m2_tdata_o    : out std_logic_vector(tdata_size-1 downto 0);
-      m2_tuser_o    : out std_logic_vector(tuser_size-1 downto 0);
-      m2_tdest_o    : out std_logic_vector(tdest_size-1 downto 0);
-      m2_tready_i   : in  std_logic;
-      m2_tvalid_o   : out std_logic;
-      m2_tlast_o    : out std_logic;
       --AXIS Slave Port 0
       s0_tdata_i  : in  std_logic_vector(tdata_size-1 downto 0);
       s0_tuser_i  : in  std_logic_vector(tuser_size-1 downto 0);
@@ -64,7 +57,7 @@ end intercon2;
 
 architecture behavioral of intercon2 is
 
-  constant number_masters : integer := 3;
+  constant number_masters : integer := 2;
   constant number_slaves  : integer := 2;
 
   component intercon2_demux is
@@ -94,13 +87,6 @@ architecture behavioral of intercon2 is
       m1_tready_i   : in  std_logic;
       m1_tvalid_o   : out std_logic;
       m1_tlast_o    : out std_logic;
-      --AXIS Master Port 2
-      m2_tdata_o    : out std_logic_vector(tdata_size-1 downto 0);
-      m2_tuser_o    : out std_logic_vector(tuser_size-1 downto 0);
-      m2_tdest_o    : out std_logic_vector(tdest_size-1 downto 0);
-      m2_tready_i   : in  std_logic;
-      m2_tvalid_o   : out std_logic;
-      m2_tlast_o    : out std_logic;
       --AXIS Master port
       s_tdata_i  : in  std_logic_vector(tdata_size-1 downto 0);
       s_tuser_i  : in  std_logic_vector(tuser_size-1 downto 0);
@@ -183,12 +169,6 @@ architecture behavioral of intercon2 is
   signal demux1_tvalid_s : std_logic_vector(number_slaves-1 downto 0);
   signal demux1_tlast_s  : std_logic_vector(number_slaves-1 downto 0);
   signal demux1_tready_s : std_logic_vector(number_slaves-1 downto 0);
-  signal demux2_tdata_s  :  axi_tdata_array(number_slaves-1 downto 0);
-  signal demux2_tuser_s  :  axi_tuser_array(number_slaves-1 downto 0);
-  signal demux2_tdest_s  :  axi_tdest_array(number_slaves-1 downto 0);
-  signal demux2_tvalid_s : std_logic_vector(number_slaves-1 downto 0);
-  signal demux2_tlast_s  : std_logic_vector(number_slaves-1 downto 0);
-  signal demux2_tready_s : std_logic_vector(number_slaves-1 downto 0);
 
   signal mux0_tdata_s  :  axi_tdata_array(number_masters-1 downto 0);
   signal mux0_tuser_s  :  axi_tuser_array(number_masters-1 downto 0);
@@ -221,14 +201,6 @@ begin
   m1_tdata_o  <= m_tdata_s(1);
   m1_tuser_o  <= m_tuser_s(1);
   m1_tdest_o  <= m_tdest_s(1);
-  
-  --Master 2
-  m2_tvalid_o <= m_tvalid_s(2);
-  m2_tlast_o  <= m_tlast_s(2);
-  m_tready_s(2) <= m2_tready_i;
-  m2_tdata_o  <= m_tdata_s(2);
-  m2_tuser_o  <= m_tuser_s(2);
-  m2_tdest_o  <= m_tdest_s(2);
   
   --Slave Connections
   --Slave 0
@@ -278,22 +250,6 @@ begin
   demux1_tdata_s(1)  <=  mux1_tdata_s(1);
   demux1_tuser_s(1)  <=  mux1_tuser_s(1);
   demux1_tdest_s(1)  <=  mux1_tdest_s(1);
-  
-  --Connext demux2 to mux0
-  demux2_tvalid_s(0) <= mux0_tvalid_s(2);
-  demux2_tlast_s(0)  <=  mux0_tlast_s(2);
-  mux0_tready_s(2) <= demux2_tready_s(0);
-  demux2_tdata_s(0)  <=  mux0_tdata_s(2);
-  demux2_tuser_s(0)  <=  mux0_tuser_s(2);
-  demux2_tdest_s(0)  <=  mux0_tdest_s(2);
-  
-  --Connext demux2 to mux1
-  demux2_tvalid_s(1) <= mux1_tvalid_s(2);
-  demux2_tlast_s(1)  <=  mux1_tlast_s(2);
-  mux1_tready_s(2) <= demux2_tready_s(1);
-  demux2_tdata_s(1)  <=  mux1_tdata_s(2);
-  demux2_tuser_s(1)  <=  mux1_tuser_s(2);
-  demux2_tdest_s(1)  <=  mux1_tdest_s(2);
   
 
 
@@ -367,14 +323,6 @@ begin
         m1_tdata_o  =>  demux1_tdata_s(j),
         m1_tuser_o  =>  demux1_tuser_s(j),
         m1_tdest_o  =>  demux1_tdest_s(j),
-        
-        --Master m2
-        m2_tvalid_o => demux2_tvalid_s(j),
-        m2_tlast_o  =>  demux2_tlast_s(j),
-        m2_tready_i => demux2_tready_s(j),
-        m2_tdata_o  =>  demux2_tdata_s(j),
-        m2_tuser_o  =>  demux2_tuser_s(j),
-        m2_tdest_o  =>  demux2_tdest_s(j),
         
         s_tdata_i  => s_tdata_s(j),
         s_tuser_i  => s_tuser_s(j),

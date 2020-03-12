@@ -77,8 +77,6 @@ architecture behavioral of axis_fifo is
 
   signal fifo_data_i_s   : std_logic_vector(internal_size_c-1 downto 0);
   signal fifo_data_o_s   : std_logic_vector(internal_size_c-1 downto 0);
-  signal header_i_s      : std_logic_vector(internal_size_c-1 downto 0);
-  signal header_o_s      : std_logic_vector(internal_size_c-1 downto 0);
 
   signal enb_i_s         : std_logic;
   signal ena_i_s         : std_logic;
@@ -114,8 +112,6 @@ begin
   fifo_status_b_o <= fifo_status_b_s;
 
   sync_fifo_gen : if sync_mode generate
-    signal count_sync_s : std_logic_vector(1 downto 0);
-  begin
 
     fifo_u : stdfifo1ck
       generic map(
@@ -139,7 +135,8 @@ begin
     count_up_s      <= s_tlast_i and ena_i_s;
 
   else generate
-
+    signal count_sync_s : std_logic_vector(1 downto 0);
+  begin
     clk_s <= clkb_i;
     fifo_u : stdfifo2ck
       generic map(
@@ -164,21 +161,18 @@ begin
 
     count_sync_s(0) <= s_tlast_i and ena_i_s;
 
-    sync_r_i : sync_r
-      generic map (
-        stages => stages
-      )
-      port map (
-        rst_i  => rst_s,
-        mclk_i => clk_s,
-        din    => count_sync_s(0),
-        dout   => count_sync_s(1)
-      );
+    async_stretch_i : async_stretch
+    port map (
+      clkin_i  => clka_i,
+      clkout_i => clkb_i,
+      din      => count_sync_s(0),
+      dout     => count_sync_s(1)
+    );
 
     det_up_i : det_up
       port map (
-        rst_i  => rst_i,
-        mclk_i => mclk_i,
+        rst_i  => rstb_i,
+        mclk_i => clkb_i,
         din    => count_sync_s(1),
         dout   => count_up_s
       );
@@ -192,7 +186,7 @@ begin
     if rising_edge(clk_s) then
         if count_dn_s = '1' and count_up_s = '0' then
           counter_s <= counter_s - 1;
-        elsif count_dn_s = '1' and count_up_s = '0' then
+        elsif count_dn_s = '0' and count_up_s = '1' then
           counter_s <= counter_s + 1;
         end if;
         if counter_s /= 0 then

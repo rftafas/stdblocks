@@ -59,17 +59,19 @@ package body axis_lib is
       variable tmp : integer;
   begin
     tmp := 0;
-    if not param.packet_mode then
-      if param.tlast_enable then
-        tmp := 1;
-      end if;
-      if param.tuser_enable then
-        tmp := param.tuser_size + tmp;
-      end if;
-      if param.tdest_enable then
-        tmp := tmp + param.tdest_size;
-      end if;
+
+    if param.packet_mode or param.tlast_enable then
+      tmp := 1;
     end if;
+
+    if param.tuser_enable then
+      tmp := param.tuser_size + tmp;
+    end if;
+
+    if param.tdest_enable then
+      tmp := tmp + param.tdest_size;
+    end if;
+
     return tmp;
   end header_size_f;
 

@@ -87,6 +87,41 @@ architecture simulation of axis_tb is
     );
   end component;
 
+  component intercon2_mux is
+    generic (
+      tdata_size   : integer := 8;
+      tdest_size   : integer := 8;
+      tuser_size   : integer := 8;
+      select_auto  : boolean := false;
+      switch_tlast : boolean := false;
+      interleaving : boolean := false;
+      max_tx_size  : integer := 10;
+      mode         : integer := 10
+    );
+    port (
+      clk_i       : in  std_logic;
+      rst_i       : in  std_logic;
+      s0_tdata_i  : in  std_logic_vector(tdata_size-1 downto 0);
+      s0_tuser_i  : in  std_logic_vector(tuser_size-1 downto 0);
+      s0_tdest_i  : in  std_logic_vector(tdest_size-1 downto 0);
+      s0_tready_o : out std_logic;
+      s0_tvalid_i : in  std_logic;
+      s0_tlast_i  : in  std_logic;
+      s1_tdata_i  : in  std_logic_vector(tdata_size-1 downto 0);
+      s1_tuser_i  : in  std_logic_vector(tuser_size-1 downto 0);
+      s1_tdest_i  : in  std_logic_vector(tdest_size-1 downto 0);
+      s1_tready_o : out std_logic;
+      s1_tvalid_i : in  std_logic;
+      s1_tlast_i  : in  std_logic;
+      m_tdata_o   : out std_logic_vector(tdata_size-1 downto 0);
+      m_tuser_o   : out std_logic_vector(tuser_size-1 downto 0);
+      m_tdest_o   : out std_logic_vector(tdest_size-1 downto 0);
+      m_tready_i  : in  std_logic;
+      m_tvalid_o  : out std_logic;
+      m_tlast_o   : out std_logic
+    );
+  end component;
+
 
   signal broadcast_tdata_i   : std_logic_vector(31 downto 0) := (others=>'0');
   signal broadcast_tuser_i   : std_logic_vector(7 downto 0)  := (others=>'0');
@@ -109,27 +144,31 @@ architecture simulation of axis_tb is
   signal broadcast1_tvalid_o : std_logic;
   signal broadcast1_tlast_o  : std_logic;
 
-  signal fifo0_tdata_o  : std_logic_vector(31 downto 0);
-  signal fifo0_tuser_o  : std_logic_vector(7 downto 0);
-  signal fifo0_tdest_o  : std_logic_vector(7 downto 0);
-  signal fifo0_tready_i : std_logic := '0';
-  signal fifo0_tvalid_o : std_logic;
-  signal fifo0_tlast_o  : std_logic;
+  signal fifo0_tdata_o       : std_logic_vector(31 downto 0);
+  signal fifo0_tuser_o       : std_logic_vector(7 downto 0);
+  signal fifo0_tdest_o       : std_logic_vector(7 downto 0);
+  signal fifo0_tready_i      : std_logic := '0';
+  signal fifo0_tvalid_o      : std_logic;
+  signal fifo0_tlast_o       : std_logic;
 
-  signal fifo1_tdata_o  : std_logic_vector(31 downto 0);
-  signal fifo1_tuser_o  : std_logic_vector(7 downto 0);
-  signal fifo1_tdest_o  : std_logic_vector(7 downto 0);
-  signal fifo1_tready_i : std_logic := '0';
-  signal fifo1_tvalid_o : std_logic;
-  signal fifo1_tlast_o  : std_logic;
+  signal fifo1_tdata_o       : std_logic_vector(31 downto 0);
+  signal fifo1_tuser_o       : std_logic_vector(7 downto 0);
+  signal fifo1_tdest_o       : std_logic_vector(7 downto 0);
+  signal fifo1_tready_i      : std_logic := '0';
+  signal fifo1_tvalid_o      : std_logic;
+  signal fifo1_tlast_o       : std_logic;
 
-  signal fifo0_status_a_o : fifo_status;
-  signal fifo0_status_b_o : fifo_status;
-  signal fifo1_status_a_o : fifo_status;
-  signal fifo1_status_b_o : fifo_status;
+  signal fifo0_status_a_o    : fifo_status;
+  signal fifo0_status_b_o    : fifo_status;
+  signal fifo1_status_a_o    : fifo_status;
+  signal fifo1_status_b_o    : fifo_status;
 
-
-  signal debug, j : integer;
+  signal mux_tdata_o           : std_logic_vector(31 downto 0);
+  signal mux_tuser_o           : std_logic_vector(7 downto 0);
+  signal mux_tdest_o           : std_logic_vector(7 downto 0);
+  signal mux_tready_i          : std_logic;
+  signal mux_tvalid_o          : std_logic;
+  signal mux_tlast_o           : std_logic;
 
 begin
 
@@ -139,7 +178,9 @@ begin
   process
   begin
     wait until rst_s = '0';
-    wait until rising_edge(clk_s);
+    for j in 0 to 3 loop
+      wait until rising_edge(clk_s);
+    end loop;
     for j in 0 to packet_size loop
       broadcast_tdata_i  <= to_std_logic_vector(j,32);
       broadcast_tvalid_i <= '1';
@@ -149,7 +190,7 @@ begin
       end if;
       wait until rising_edge(clk_s) and broadcast_tready_o = '1';
     end loop;
-    wait;
+    broadcast_tvalid_i <= '0';
   end process;
 
   broadcast2_i : broadcast2
@@ -163,13 +204,13 @@ begin
     rst_i       => rst_s,
     m0_tdata_o  => broadcast0_tdata_o,
     m0_tuser_o  => broadcast0_tuser_o,
-    m0_tdest_o  => broadcast0_tdest_o,
+    m0_tdest_o  => open,
     m0_tready_i => broadcast0_tready_i,
     m0_tvalid_o => broadcast0_tvalid_o,
     m0_tlast_o  => broadcast0_tlast_o,
     m1_tdata_o  => broadcast1_tdata_o,
     m1_tuser_o  => broadcast1_tuser_o,
-    m1_tdest_o  => broadcast1_tdest_o,
+    m1_tdest_o  => open,
     m1_tready_i => broadcast1_tready_i,
     m1_tvalid_o => broadcast1_tvalid_o,
     m1_tlast_o  => broadcast1_tlast_o,
@@ -180,6 +221,9 @@ begin
     s_tvalid_i  => broadcast_tvalid_i,
     s_tlast_i   => broadcast_tlast_i
   );
+
+  broadcast0_tdest_o <= x"00";
+  broadcast1_tdest_o <= x"01";
 
   axis0_fifo_i : axis_fifo
   generic map (
@@ -250,5 +294,40 @@ begin
     fifo_status_a_o => fifo1_status_a_o,
     fifo_status_b_o => fifo1_status_b_o
   );
+
+  intercon2_mux_i : intercon2_mux
+    generic map (
+      tdata_size   => 32,
+      tdest_size   => 8,
+      tuser_size   => 8,
+      select_auto  => true,
+      switch_tlast => true,
+      interleaving => false,
+      max_tx_size  => 50,
+      mode         => 0
+    )
+    port map (
+      clk_i       => clk_s,
+      rst_i       => rst_s,
+      s0_tdata_i  => fifo0_tdata_o,
+      s0_tuser_i  => fifo0_tuser_o,
+      s0_tdest_i  => fifo0_tdest_o,
+      s0_tready_o => fifo0_tready_i,
+      s0_tvalid_i => fifo0_tvalid_o,
+      s0_tlast_i  => fifo0_tlast_o,
+      s1_tdata_i  => fifo1_tdata_o,
+      s1_tuser_i  => fifo1_tuser_o,
+      s1_tdest_i  => fifo1_tdest_o,
+      s1_tready_o => fifo1_tready_i,
+      s1_tvalid_i => fifo1_tvalid_o,
+      s1_tlast_i  => fifo1_tlast_o,
+      m_tdata_o   => mux_tdata_o,
+      m_tuser_o   => mux_tuser_o,
+      m_tdest_o   => mux_tdest_o,
+      m_tready_i  => '1',--mux_tready_i,
+      m_tvalid_o  => mux_tvalid_o,
+      m_tlast_o   => mux_tlast_o
+    );
+
 
 end simulation;

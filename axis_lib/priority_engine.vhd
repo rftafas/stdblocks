@@ -29,7 +29,6 @@ end priority_engine;
 
 architecture behavioral of priority_engine is
 
-
   function integer_count ( input : integer; limit : integer; up_cnt : boolean) return integer is
     variable tmp : integer;
   begin
@@ -50,11 +49,13 @@ architecture behavioral of priority_engine is
   end integer_count;
 
   type index_sr_t is array (n_elements-1 downto 0) of integer;
-  signal index_sr         : index_sr_t;
+  signal index_sr         : index_sr_t := (others=>0);
   signal moving_index_s   : integer range 0 to n_elements-1 := 0;
   signal priority_index_s : integer range 0 to n_elements-1 := 0;
 
 begin
+
+
 
   mode_gen: case mode generate
 
@@ -74,7 +75,10 @@ begin
       -- Also, it never messes with packet order.
       process(all)
       begin
-        if rising_edge(clk_i) then
+        if rst_i = '1' then
+          grant_o <= (others=>'0');
+          moving_index_s <= 0;
+        elsif rising_edge(clk_i) then
           for j in n_elements-1 downto 0 loop
             if moving_index_s = j then
               if ack_i(j) = '1' then
@@ -89,6 +93,7 @@ begin
           end loop;
         end if;
       end process;
+      index_o <= moving_index_s;
 
     when 2 =>
       -- type 2:
@@ -97,7 +102,12 @@ begin
       process(all)
         variable locked : boolean := false;
       begin
-        if rising_edge(clk_i) then
+        if rst_i = '1' then
+          grant_o <= (others=>'0');
+          locked  := false;
+          priority_index_s <= 0;
+          moving_index_s   <= 0;
+        elsif rising_edge(clk_i) then
           if locked and ack_i(moving_index_s) = '1' then
               locked := false;
               grant_o(moving_index_s) <= '0';
@@ -111,6 +121,7 @@ begin
           end if;
         end if;
       end process;
+      index_o <= moving_index_s;
 
     when 3 =>
       -- type 3:
@@ -120,7 +131,12 @@ begin
       process(all)
         variable locked : boolean := false;
       begin
-        if rising_edge(clk_i) then
+        if rst_i = '1' then
+          grant_o  <= (others=>'0');
+          locked   := false;
+          index_sr <= (others=>0);
+          moving_index_s <= 0;
+        elsif rising_edge(clk_i) then
           if locked and ack_i(moving_index_s) = '1' then
               locked := false;
               grant_o(moving_index_s) <= '0';
@@ -134,6 +150,7 @@ begin
           end if;
         end if;
       end process;
+      index_o <= moving_index_s;
 
     when others =>
         -- type 0
@@ -142,12 +159,19 @@ begin
         process(all)
             variable locked : boolean := false;
         begin
-          if rising_edge(clk_i) then
+          if rst_i = '1' then
+            index_o <= 0;
+            grant_o <= (others=>'0');
+            locked  := false;
+          elsif rising_edge(clk_i) then
             locked := false;
             for j in n_elements-1 downto 0 loop
-              if request_i(j) = '1' then
+              if ack_i(j) = '1' then
+                grant_o(j) <= '0';
+              elsif request_i(j) = '1' and not locked then
                   grant_o(j) <= '1';
                   locked := true;
+                  index_o <= j;
               else
                 grant_o(j) <= '0';
               end if;

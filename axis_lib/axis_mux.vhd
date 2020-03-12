@@ -53,7 +53,7 @@ architecture behavioral of axis_mux is
   end component;
 
   signal tx_count_s : integer;
-  signal index_s    : integer;
+  signal index_s    : integer range 0 to number_ports-1 := 0;
   signal ack_s      : std_logic_vector(number_ports-1 downto 0);
 
   type axi_tdata_array is array (number_ports-1 downto 0) of std_logic_vector(tdata_size-1 downto 0);
@@ -70,21 +70,28 @@ architecture behavioral of axis_mux is
 
 begin
 
+  --slave connections
+  --array connections
+
+  --output selection
+  m_tdata_o  <= axi_tdata_s(index_s);
+  m_tdest_o  <= axi_tdest_s(index_s);
+  m_tuser_o  <= axi_tuser_s(index_s);
+  m_tvalid_o <= s_tvalid_s(index_s);
+  m_tlast_o  <= s_tlast_s(index_s);
+
   process(all)
   begin
-    if rising_edge(clk_i) then
-    --array connections
-      --output selection
-      m_tdata_o  <= axi_tdata_s(index_s);
-      m_tdest_o  <= axi_tdest_s(index_s);
-      m_tuser_o  <= axi_tuser_s(index_s);
-      m_tvalid_o <= s_tvalid_s(index_s);
-      m_tlast_o  <= s_tlast_s(index_s);
+    if rst_i = '1' then
+      tx_count_s <= 0;
+    elsif rising_edge(clk_i) then
       --max size count
       if max_tx_size = 0 then
         tx_count_s <= 1;
       elsif (s_tready_s(index_s) and s_tvalid_s(index_s)) = '1' then
-        if tx_count_s = max_tx_size-1 then
+        if ack_s(index_s) = '1' then
+          tx_count_s <= 0;
+        elsif tx_count_s = max_tx_size-1 then
           tx_count_s <= 0;
         else
           tx_count_s <= tx_count_s + 1;
