@@ -33,7 +33,11 @@ package axis_lib is
   end record;
 
   function header_size_f ( param : fifo_config_rec ) return integer;
-
+  function fifo_size_f   ( param : fifo_config_rec ) return integer;
+  function head_bus_in   ( param : fifo_config_rec; data  : fifo_data_rec ) return std_logic_vector;
+  function data_bus_in   ( param : fifo_config_rec; data  : fifo_data_rec ) return std_logic_vector;
+  function head_bus_out  ( param : fifo_config_rec; input_data : std_logic_vector ) return fifo_data_rec;
+  function data_bus_out  ( param : fifo_config_rec; input_data : std_logic_vector ) return fifo_data_rec;
 
 end package;
 
@@ -59,7 +63,7 @@ package body axis_lib is
   end function fifo_type_dec;
 
   function header_size_f (
-    param   : fifo_config_rec
+    param : fifo_config_rec
   )
   return integer is
       variable tmp : integer;
@@ -80,7 +84,7 @@ package body axis_lib is
   end header_size_f;
 
   function fifo_size_f (
-    param   : fifo_config_rec
+    param : fifo_config_rec
   )
   return integer is
       variable tmp : integer;
@@ -97,7 +101,7 @@ package body axis_lib is
   begin
   --
     if param.packet_mode or param.tlast_enable then
-      head_data_v(0) <= data.tlast;
+      head_data_v(0) := data.tlast;
     end if;
 
     if param.tuser_enable then
@@ -114,55 +118,55 @@ package body axis_lib is
   end head_bus_in;
 
   function data_bus_in (
-    param : in fifo_config_rec;
-    data  : in fifo_data_rec
+    param : fifo_config_rec;
+    data  : fifo_data_rec
   ) return std_logic_vector is
     variable head_data_v : std_logic_vector(header_size_f(param) downto 0);
     variable fifo_data_v : std_logic_vector(  fifo_size_f(param) downto 0);
   begin
-    head_data_v := head_bus_in(data,param);
+    head_data_v := head_bus_in(param,data);
     fifo_data_v(fifo_size_f(param) downto fifo_size_f(param)-head_data_v'length) := head_data_v;
     fifo_data_v(data.tdata'range) := data.tdata;
     return fifo_data_v;
   end data_bus_in;
 
   function head_bus_out (
-    param      : in  fifo_config_rec;
-    input_data : in  std_logic_vector
+    param      : fifo_config_rec;
+    input_data : std_logic_vector
   ) return fifo_data_rec is
     variable head_data_v : std_logic_vector(header_size_f(param)-1 downto 0);
     variable data_v      : fifo_data_rec;
   begin
     head_data_v  := input_data;
     data_v.tdata := (others=>'0');
-    
+
     if param.tdest_enable then
-      data_v.tdest <= head_data_v(data_v.tdest'range);
+      data_v.tdest := head_data_v(data_v.tdest'range);
       head_data_v  := head_data_v srl param.tdest_size;
     end if;
 
     if param.tuser_enable then
-      data_v.tuser <= head_data_v(data_v.tuser'range);
+      data_v.tuser := head_data_v(data_v.tuser'range);
       head_data_v  := head_data_v srl param.tuser_size;
     end if;
 
     if param.packet_mode or param.tlast_enable then
-      data_v.tlast <= head_data_v(0);
+      data_v.tlast := head_data_v(0);
     end if;
 
     return data_v;
   end head_bus_out;
 
   function data_bus_out (
-    param     : in  fifo_config_rec;
-    fifo_data : in  std_logic_vector
+    param      : fifo_config_rec;
+    input_data : std_logic_vector
   ) return fifo_data_rec is
     variable head_data_v : std_logic_vector(header_size_f(param)-1 downto 0);
     variable data_v      : fifo_data_rec;
   begin
-    head_data_v  := fifo_data(fifo_data'high downto param.tdata_size);
+    head_data_v  := input_data(input_data'high downto param.tdata_size);
     data_v       := head_bus_out(param,head_data_v);
-    data_v.tdata := fifo_data(data_v.tdata'range);
+    data_v.tdata := input_data(data_v.tdata'range);
     return data_v;
   end data_bus_out;
 

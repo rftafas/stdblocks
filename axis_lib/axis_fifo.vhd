@@ -76,21 +76,24 @@ architecture behavioral of axis_fifo is
 
   constant internal_size_c : integer := fifo_size_f(fifo_param_c);
 
-  signal   fifo_data_i_s   : std_logic_vector(internal_size_c-1 downto 0);
-  signal   fifo_data_o_s   : std_logic_vector(internal_size_c-1 downto 0);
-  signal   header_i_s      : std_logic_vector(internal_size_c-1 downto 0);
-  signal   header_o_s      : std_logic_vector(internal_size_c-1 downto 0);
+  signal datarec_i_s     : fifo_data_rec;
+  signal datarec_o_s     : fifo_data_rec;
 
-  signal enb_i_s           : std_logic;
-  signal ena_i_s           : std_logic;
-  signal clk_s             : std_logic;
-  signal m_tlast_o_s       : std_logic;
+  signal fifo_data_i_s   : std_logic_vector(internal_size_c-1 downto 0);
+  signal fifo_data_o_s   : std_logic_vector(internal_size_c-1 downto 0);
+  signal header_i_s      : std_logic_vector(internal_size_c-1 downto 0);
+  signal header_o_s      : std_logic_vector(internal_size_c-1 downto 0);
 
-  signal fifo_status_a_s   : fifo_status;
-  signal fifo_status_b_s   : fifo_status;
+  signal enb_i_s         : std_logic;
+  signal ena_i_s         : std_logic;
+  signal clk_s           : std_logic;
+  signal m_tlast_o_s     : std_logic;
 
-  signal counter_s         : integer := 0;
-  signal has_packet_s      : std_logic;
+  signal fifo_status_a_s : fifo_status;
+  signal fifo_status_b_s : fifo_status;
+
+  signal counter_s       : integer := 0;
+  signal has_packet_s    : std_logic;
 
 begin
 
@@ -125,13 +128,13 @@ begin
       generic map(
         ram_type  => ram_type,
         fifo_size => fifo_size,
-        port_size => internal_port_size
+        port_size => internal_size_c
       )
       port map(
         clk_i   => clka_i,
         rst_i   => rsta_i,
-        dataa_i  => fifo_data_i_s(fifo_size-1 downto 0),
-        datab_o  => fifo_data_o_s(fifo_size-1 downto 0),
+        dataa_i  => fifo_data_i_s,
+        datab_o  => fifo_data_o_s,
         ena_i    => ena_i_s,
         enb_i    => enb_i_s,
 
@@ -145,7 +148,7 @@ begin
       generic map(
         ram_type  => ram_type,
         fifo_size => fifo_size,
-        port_size => internal_port_size
+        port_size => internal_size_c
       )
       port map(
         --general
@@ -153,8 +156,8 @@ begin
         rsta_i   => rsta_i,
         clkb_i   => clkb_i,
         rstb_i   => rstb_i,
-        dataa_i  => fifo_data_i_s(fifo_size-1 downto 0),
-        datab_o  => fifo_data_o_s(fifo_size-1 downto 0),
+        dataa_i  => fifo_data_i_s,
+        datab_o  => fifo_data_o_s,
         ena_i    => ena_i_s,
         enb_i    => enb_i_s,
 
