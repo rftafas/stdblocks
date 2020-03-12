@@ -9,21 +9,12 @@
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
-library expert;
-  use expert.std_logic_gray.all;
-library stdblocks;
-  use stdblocks.sync_lib.all;
-  use stdblocks.ram_lib.all;
-  use stdblocks.fifo_lib.all;
 
 entity axis_reg is
     generic (
       tdata_size      : integer := 8;
       tdest_size      : integer := 8;
-      tuser_size      : integer := 8;
-      tuser_enable    : boolean := false;
-      sync_mode       : boolean := false;
-      tdest_enable    : boolean := false
+      tuser_size      : integer := 8
     );
     port (
       --general
@@ -48,14 +39,52 @@ end axis_reg;
 
 architecture behavioral of axis_reg is
 
+  type negotiation_control_t is (idle, protection, active);
+  signal control_mq : negotiation_control_t;
+
 begin
+
+  process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      case control_mq is
+        when idle =>
+          if s_tvalid_i = '1' then
+            if m_tready_i = '1' then
+              control_mq <= active;
+            else
+              control_mq <= protection;
+            end if;
+          end if;
+
+        when protection =>
+          if m_tready_i = '1' then
+            control_mq <= idle;
+          end if;
+
+        when active =>
+          if s_tvalid_i = '0' then
+            if m_tready_i = '1' then
+              control_mq <= active;
+            else
+              control_mq <= protection;
+            end if;
+          end if;
+
+        when others =>
+          control_mq <= idle;
+
+      end case;
+    end if;
+  end process;
 
   s_tready_o <= m_tready_i;
 
   process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if m_tready_i = '1' then
+      if control_mq = active then
+
         m_tvalid_o <= s_tvalid_i;
         m_tdata_o  <= s_tdata_i;
         m_tuser_o  <= s_tuser_i;

@@ -197,7 +197,7 @@ begin
     s_tlast_i   => broadcast_tlast_i
   );
 
-  axis_fifo_i : axis_fifo
+  axis0_fifo_i : axis_fifo
   generic map (
     ram_type     => blockram,
     fifo_size    => 32,
@@ -212,10 +212,10 @@ begin
     tdest_enable => true
   )
   port map (
-    clka_i          => clka_i,
-    rsta_i          => rsta_i,
-    clkb_i          => clkb_i,
-    rstb_i          => rstb_i,
+    clka_i          => clk_s,
+    rsta_i          => rst_s,
+    clkb_i          => '0',
+    rstb_i          => '0',
     s_tdata_i       => broadcast0_tdata_o,
     s_tuser_i       => broadcast0_tuser_o,
     s_tdest_i       => broadcast0_tdest_o,
@@ -232,7 +232,7 @@ begin
     fifo_status_b_o => fifo0_status_b_o
   );
 
-  axis_fifo_i : axis_fifo
+  axis1_fifo_i : axis_fifo
   generic map (
     ram_type     => blockram,
     fifo_size    => 32,
@@ -247,8 +247,8 @@ begin
     tdest_enable => true
   )
   port map (
-    clka_i          => clka_s,
-    rsta_i          => rsta_s,
+    clka_i          => clk_s,
+    rsta_i          => rst_s,
     clkb_i          => '0',
     rstb_i          => '0',
     s_tdata_i       => broadcast1_tdata_o,
