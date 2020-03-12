@@ -6,6 +6,8 @@
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
+library expert;
+  use expert.std_logic_expert.all;
 
 entity axis_demux is
     generic (
@@ -53,11 +55,11 @@ begin
 --array connections
 
   out_gen : for j in number_masters-1 downto 0 generate
-    m_tdata_s(j) <= s_tdata_i;
-    m_tuser_s(j) <= s_tuser_i;
-    m_tdest_s(j) <= s_tdest_i;
-    m_tlast_s(j)  <= s_tlast_i;
-    m_tvalid_s(j) <= s_tvalid_i when to_integer(s_tdest_i) = j else '0';
+    m_tdata_s(j)  <= s_tdata_i;--  when to_integer(s_tdest_i) = j else (others=>'0');
+    m_tuser_s(j)  <= s_tuser_i;--  when to_integer(s_tdest_i) = j else (others=>'0');
+    m_tdest_s(j)  <= s_tdest_i;--  when to_integer(s_tdest_i) = j else (others=>'0');
+    m_tlast_s(j)  <= s_tlast_i;--  when to_integer(s_tdest_i) = j else '0';
+    m_tvalid_s(j) <= s_tvalid_i;-- when to_integer(s_tdest_i) = j else '0';
   end generate;
 
   s_tready_o <= m_tready_s(to_integer(s_tdest_i));

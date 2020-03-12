@@ -5,6 +5,8 @@
 -- when done using, ack it.
 -- This block does not prevent bad behavior. that can be made outside with
 -- nice counters.
+--
+-- if you are asking why natural, try asking the guys from vivadosim.
 ----------------------------------------------------------------------------------
 library ieee;
   use ieee.std_logic_1164.all;
@@ -23,7 +25,7 @@ entity priority_engine is
       request_i    : in  std_logic_vector(n_elements-1 downto 0);
       ack_i        : in  std_logic_vector(n_elements-1 downto 0);
       grant_o      : out std_logic_vector(n_elements-1 downto 0);
-      index_o      : out integer
+      index_o      : out natural
     );
 end priority_engine;
 
@@ -50,8 +52,8 @@ architecture behavioral of priority_engine is
 
   type index_sr_t is array (n_elements-1 downto 0) of integer;
   signal index_sr         : index_sr_t := (others=>0);
-  signal moving_index_s   : integer range 0 to n_elements-1 := 0;
-  signal priority_index_s : integer range 0 to n_elements-1 := 0;
+  signal moving_index_s   : natural := 0;
+  signal priority_index_s : natural := 0;
 
 begin
 

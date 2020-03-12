@@ -232,7 +232,7 @@ def axis_demux ( entity_name, number_elements):
         elif ("--python port code" in line):
             output_file.write(create_axis_port("m","master",number_elements,3))
         elif ("--python constant code" in line):
-            output_file.write("  constant number_ports : integer := %d;\r\n" % number_elements)
+            output_file.write("  constant number_masters : integer := %d;\r\n" % number_elements)
         elif ("--array connections" in line):
             output_file.write(create_port_connection("m","master",number_masters,1))
         else:

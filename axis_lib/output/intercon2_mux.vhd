@@ -61,12 +61,12 @@ architecture behavioral of intercon2_mux is
       request_i : in  std_logic_vector(n_elements-1 downto 0);
       ack_i     : in  std_logic_vector(n_elements-1 downto 0);
       grant_o   : out std_logic_vector(n_elements-1 downto 0);
-      index_o   : out integer
+      index_o   : out natural
     );
   end component;
 
   signal tx_count_s : integer;
-  signal index_s    : integer range 0 to number_ports-1 := 0;
+  signal index_s    : natural range 0 to number_ports-1;
   signal ack_s      : std_logic_vector(number_ports-1 downto 0);
 
   type axi_tdata_array is array (number_ports-1 downto 0) of std_logic_vector(tdata_size-1 downto 0);
@@ -101,8 +101,8 @@ begin
   m_tdata_o  <= axi_tdata_s(index_s);
   m_tdest_o  <= axi_tdest_s(index_s);
   m_tuser_o  <= axi_tuser_s(index_s);
-  m_tvalid_o <=  s_tvalid_s(index_s);
-  m_tlast_o  <=   s_tlast_s(index_s);
+  m_tvalid_o <= s_tvalid_s(index_s);
+  m_tlast_o  <= s_tlast_s(index_s);
 
   process(all)
   begin

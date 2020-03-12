@@ -122,6 +122,38 @@ architecture simulation of axis_tb is
     );
   end component;
 
+  component intercon2_demux is
+    generic (
+      tdata_size   : integer := 8;
+      tdest_size   : integer := 8;
+      tuser_size   : integer := 8;
+      select_auto  : boolean := false;
+      switch_tlast : boolean := false;
+      max_tx_size  : integer := 10
+    );
+    port (
+      clk_i       : in  std_logic;
+      rst_i       : in  std_logic;
+      m0_tdata_o  : out std_logic_vector(tdata_size-1 downto 0);
+      m0_tuser_o  : out std_logic_vector(tuser_size-1 downto 0);
+      m0_tdest_o  : out std_logic_vector(tdest_size-1 downto 0);
+      m0_tready_i : in  std_logic;
+      m0_tvalid_o : out std_logic;
+      m0_tlast_o  : out std_logic;
+      m1_tdata_o  : out std_logic_vector(tdata_size-1 downto 0);
+      m1_tuser_o  : out std_logic_vector(tuser_size-1 downto 0);
+      m1_tdest_o  : out std_logic_vector(tdest_size-1 downto 0);
+      m1_tready_i : in  std_logic;
+      m1_tvalid_o : out std_logic;
+      m1_tlast_o  : out std_logic;
+      s_tdata_i   : in  std_logic_vector(tdata_size-1 downto 0);
+      s_tuser_i   : in  std_logic_vector(tuser_size-1 downto 0);
+      s_tdest_i   : in  std_logic_vector(tdest_size-1 downto 0);
+      s_tready_o  : out std_logic;
+      s_tvalid_i  : in  std_logic;
+      s_tlast_i   : in  std_logic
+    );
+  end component;
 
   signal broadcast_tdata_i   : std_logic_vector(31 downto 0) := (others=>'0');
   signal broadcast_tuser_i   : std_logic_vector(7 downto 0)  := (others=>'0');
@@ -170,6 +202,20 @@ architecture simulation of axis_tb is
   signal mux_tvalid_o          : std_logic;
   signal mux_tlast_o           : std_logic;
 
+  signal demux0_tdata_o       : std_logic_vector(31 downto 0);
+  signal demux0_tuser_o       : std_logic_vector(7 downto 0);
+  signal demux0_tdest_o       : std_logic_vector(7 downto 0);
+  signal demux0_tready_i      : std_logic := '0';
+  signal demux0_tvalid_o      : std_logic;
+  signal demux0_tlast_o       : std_logic;
+
+  signal demux1_tdata_o       : std_logic_vector(31 downto 0);
+  signal demux1_tuser_o       : std_logic_vector(7 downto 0);
+  signal demux1_tdest_o       : std_logic_vector(7 downto 0);
+  signal demux1_tready_i      : std_logic := '0';
+  signal demux1_tvalid_o      : std_logic;
+  signal demux1_tlast_o       : std_logic;
+
 begin
 
   clk_s <= not clk_s after 10 ns;
@@ -178,9 +224,6 @@ begin
   process
   begin
     wait until rst_s = '0';
-    for j in 0 to 3 loop
-      wait until rising_edge(clk_s);
-    end loop;
     for j in 0 to packet_size loop
       broadcast_tdata_i  <= to_std_logic_vector(j,32);
       broadcast_tvalid_i <= '1';
@@ -191,6 +234,9 @@ begin
       wait until rising_edge(clk_s) and broadcast_tready_o = '1';
     end loop;
     broadcast_tvalid_i <= '0';
+    for j in 0 to 3 loop
+      wait until rising_edge(clk_s);
+    end loop;
   end process;
 
   broadcast2_i : broadcast2
@@ -324,10 +370,41 @@ begin
       m_tdata_o   => mux_tdata_o,
       m_tuser_o   => mux_tuser_o,
       m_tdest_o   => mux_tdest_o,
-      m_tready_i  => '1',--mux_tready_i,
+      m_tready_i  => mux_tready_i,
       m_tvalid_o  => mux_tvalid_o,
       m_tlast_o   => mux_tlast_o
     );
 
+    intercon2_demux_i : intercon2_demux
+    generic map (
+      tdata_size   => 32,
+      tdest_size   => 8,
+      tuser_size   => 8,
+      select_auto  => true,
+      switch_tlast => true,
+      max_tx_size  => 50
+    )
+    port map (
+      clk_i       => clk_s,
+      rst_i       => rst_s,
+      m0_tdata_o  => demux0_tdata_o,
+      m0_tuser_o  => demux0_tuser_o,
+      m0_tdest_o  => demux0_tdest_o,
+      m0_tready_i => '1',--demux0_tready_i,
+      m0_tvalid_o => demux0_tvalid_o,
+      m0_tlast_o  => demux0_tlast_o,
+      m1_tdata_o  => demux1_tdata_o,
+      m1_tuser_o  => demux1_tuser_o,
+      m1_tdest_o  => demux1_tdest_o,
+      m1_tready_i => '1',--demux1_tready_i,
+      m1_tvalid_o => demux1_tvalid_o,
+      m1_tlast_o  => demux1_tlast_o,
+      s_tdata_i   => mux_tdata_o,
+      s_tuser_i   => mux_tuser_o,
+      s_tdest_i   => mux_tdest_o,
+      s_tready_o  => mux_tready_i,
+      s_tvalid_i  => mux_tvalid_o,
+      s_tlast_i   => mux_tlast_o
+    );
 
 end simulation;

@@ -6,6 +6,8 @@
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
+library expert;
+  use expert.std_logic_expert.all;
 
 entity intercon2_demux is
     generic (
@@ -45,7 +47,7 @@ end intercon2_demux;
 
 architecture behavioral of intercon2_demux is
 
-  constant number_ports : integer := 2;
+  constant number_masters : integer := 2;
 
   constant all1_c : std_logic_vector(number_masters-1 downto 0) := (others=>'1');
 
