@@ -30,7 +30,6 @@ entity axis_fifo is
       tdest_enable : boolean := false;
       sync_mode    : boolean := false;
       cut_through  : boolean := false
-
     );
     port (
       --general
@@ -76,9 +75,6 @@ architecture behavioral of axis_fifo is
 
   constant internal_size_c : integer := fifo_size_f(fifo_param_c);
 
-  signal datarec_i_s     : fifo_data_rec;
-  signal datarec_o_s     : fifo_data_rec;
-
   signal fifo_data_i_s   : std_logic_vector(internal_size_c-1 downto 0);
   signal fifo_data_o_s   : std_logic_vector(internal_size_c-1 downto 0);
   signal header_i_s      : std_logic_vector(internal_size_c-1 downto 0);
@@ -94,23 +90,19 @@ architecture behavioral of axis_fifo is
 
   signal counter_s       : integer := 0;
   signal has_packet_s    : std_logic;
+  signal count_up_s      : std_logic;
+  signal count_dn_s      : std_logic;
 
 begin
 
   --input, data to fifo
-  datarec_i_s.tdata <= s_tdata_i;
-  datarec_i_s.tdest <= s_tdest_i;
-  datarec_i_s.tuser <= s_tuser_i;
-  datarec_i_s.tlast <= s_tlast_i;
-  fifo_data_i_s     <= data_bus_in(fifo_param_c,datarec_i_s);
+  fifo_data_i_s     <= fifo_in_f(fifo_param_c,s_tdata_i,s_tuser_i,s_tdest_i,s_tlast_i);
 
   --output, data FROM fifo.
-  datarec_o_s <= data_bus_out(fifo_param_c,fifo_data_o_s);
-  m_tdata_o   <= datarec_o_s.tdata;
-  m_tuser_o   <= datarec_o_s.tuser;
-  m_tdest_o   <= datarec_o_s.tdest;
-  m_tlast_o   <= datarec_o_s.tlast;
-  m_tlast_o   <= m_tlast_o_s;
+  m_tdata_o   <= tdata_out_f(fifo_param_c,fifo_data_o_s);
+  m_tuser_o   <= tuser_out_f(fifo_param_c,fifo_data_o_s);
+  m_tdest_o   <= tdest_out_f(fifo_param_c,fifo_data_o_s);
+  m_tlast_o   <= tlast_out_f(fifo_param_c,fifo_data_o_s);
 
   s_tready_o      <= not fifo_status_a_s.full;
   ena_i_s         <= not fifo_status_a_s.full and s_tvalid_i;
@@ -122,8 +114,9 @@ begin
   fifo_status_b_o <= fifo_status_b_s;
 
   sync_fifo_gen : if sync_mode generate
-    clk_s <= clka_i;
-    fifo_status_b_s <= fifo_status_a_s;
+    signal count_sync_s : std_logic_vector(1 downto 0);
+  begin
+
     fifo_u : stdfifo1ck
       generic map(
         ram_type  => ram_type,
@@ -140,6 +133,10 @@ begin
 
         fifo_status_o => fifo_status_a_s
       );
+
+    clk_s           <= clka_i;
+    fifo_status_b_s <= fifo_status_a_s;
+    count_up_s      <= s_tlast_i and ena_i_s;
 
   else generate
 
@@ -164,15 +161,38 @@ begin
         fifo_status_a_o => fifo_status_a_s,
         fifo_status_b_o => fifo_status_b_s
       );
+
+    count_sync_s(0) <= s_tlast_i and ena_i_s;
+
+    sync_r_i : sync_r
+      generic map (
+        stages => stages
+      )
+      port map (
+        rst_i  => rst_s,
+        mclk_i => clk_s,
+        din    => count_sync_s(0),
+        dout   => count_sync_s(1)
+      );
+
+    det_up_i : det_up
+      port map (
+        rst_i  => rst_i,
+        mclk_i => mclk_i,
+        din    => count_sync_s(1),
+        dout   => count_up_s
+      );
+
   end generate;
 
+  count_dn_s  <= tlast_out_f(fifo_param_c,fifo_data_o_s) and enb_i_s;
 
   packet_proc : process(clk_s)
   begin
     if rising_edge(clk_s) then
-        if datarec_o_s.tlast = '1' and datarec_i_s.tlast = '0' then
+        if count_dn_s = '1' and count_up_s = '0' then
           counter_s <= counter_s - 1;
-        elsif datarec_o_s.tlast = '1' and datarec_i_s.tlast = '0' then
+        elsif count_dn_s = '1' and count_up_s = '0' then
           counter_s <= counter_s + 1;
         end if;
         if counter_s /= 0 then

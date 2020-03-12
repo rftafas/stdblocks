@@ -152,22 +152,6 @@ begin
     wait;
   end process;
 
-  process
-  begin
-    broadcast0_tready_i <= '0';
-    broadcast1_tready_i <= '0';
-    wait until rst_s = '0';
-    wait for 15 ns;
-    --wait until broadcast1_tvalid_o = '1';
-    wait until rising_edge(clk_s);
-    broadcast1_tready_i <= '1';
-    --wait until broadcast0_tvalid_o = '1';
-    wait for 20 ns;
-    wait until rising_edge(clk_s);
-    broadcast0_tready_i <= '1';
-    wait;
-  end process;
-
   broadcast2_i : broadcast2
   generic map (
     tdata_size => 32,
@@ -200,7 +184,7 @@ begin
   axis0_fifo_i : axis_fifo
   generic map (
     ram_type     => blockram,
-    fifo_size    => 32,
+    fifo_size    => 12,
     tdata_size   => 32,
     tdest_size   => 8,
     tuser_size   => 8,
@@ -235,7 +219,7 @@ begin
   axis1_fifo_i : axis_fifo
   generic map (
     ram_type     => blockram,
-    fifo_size    => 32,
+    fifo_size    => 12,
     tdata_size   => 32,
     tdest_size   => 8,
     tuser_size   => 8,

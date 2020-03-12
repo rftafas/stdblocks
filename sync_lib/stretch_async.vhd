@@ -9,8 +9,8 @@ library ieee;
 
 entity async_stretch is
     port (
-        slowclk_i  : in  std_logic;
-        fastclk_i  : in  std_logic;
+        clkin_i  : in  std_logic;
+        clkout_i  : in  std_logic;
         din        : in  std_logic;
         dout       : out std_logic
     );
@@ -27,9 +27,9 @@ architecture behavioral of async_stretch is
 
 begin
 
-  process(fastclk_i)
+  process(clkin_i)
   begin
-    if rising_edge(fastclk_i) then
+    if rising_edge(clkin_i) then
       reg_back_s <= reg_back_s(0) & reg_out_s;
       if din = '1' then
         reg_forward_s <= '1';
@@ -39,9 +39,9 @@ begin
     end if;
   end process;
 
-  process(slowclk_i)
+  process(clkout_i)
   begin
-    if rising_edge(slowclk_i) then
+    if rising_edge(clkout_i) then
       if reg_out_s = '1' then
         reg_out_s  <= '0';
         reg_meta_s <= '0';

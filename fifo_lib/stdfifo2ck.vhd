@@ -160,6 +160,7 @@ begin
     fifo_status_a_o.steady    <= '1' when input_fifo_mq = steady_st    else '0';
     fifo_status_a_o.goempty   <= '1' when input_fifo_mq = goempty_st   else '0';
     fifo_status_a_o.empty     <= '1' when input_fifo_mq = empty_st     else '0';
+    
     sync_underflow : sync_r
       generic map (
         stages => 1
@@ -178,6 +179,7 @@ begin
     fifo_status_b_o.empty     <= '1' when output_fifo_mq = empty_st     else '0';
     underflow_s               <= '1' when output_fifo_mq = underflow_st else '0';
     fifo_status_b_o.underflow <= underflow_s;
+    
     sync_overflow : sync_r
       generic map (
         stages => 1
