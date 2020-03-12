@@ -155,6 +155,39 @@ architecture simulation of axis_tb is
     );
   end component;
 
+  component smart_axis_packet_fifo is
+    generic (
+      ram_type     : fifo_t := blockram;
+      fifo_size    : integer := 8;
+      meta_size    : integer := 5;
+      tdata_size   : integer := 8;
+      tdest_size   : integer := 8;
+      tuser_size   : integer := 8;
+      tuser_enable : boolean := false;
+      tdest_enable : boolean := false
+    );
+    port (
+      clk_i           : in  std_logic;
+      rst_i           : in  std_logic;
+      s_tdata_i       : in  std_logic_vector(tdata_size-1 downto 0);
+      s_tuser_i       : in  std_logic_vector(tuser_size-1 downto 0);
+      s_tdest_i       : in  std_logic_vector(tdest_size-1 downto 0);
+      s_tready_o      : out std_logic;
+      s_tvalid_i      : in  std_logic;
+      s_tlast_i       : in  std_logic;
+      m_tdata_o       : out std_logic_vector(tdata_size-1 downto 0);
+      m_tuser_o       : out std_logic_vector(tuser_size-1 downto 0);
+      m_tdest_o       : out std_logic_vector(tdest_size-1 downto 0);
+      m_tready_i      : in  std_logic;
+      m_tvalid_o      : out std_logic;
+      m_tlast_o       : out std_logic;
+      flush_i         : in  std_logic;
+      abort_i         : in  std_logic;
+      fifo_status_a_o : out fifo_status;
+      fifo_status_b_o : out fifo_status
+    );
+  end component;
+
   signal broadcast_tdata_i   : std_logic_vector(31 downto 0) := (others=>'0');
   signal broadcast_tuser_i   : std_logic_vector(7 downto 0)  := (others=>'0');
   signal broadcast_tdest_i   : std_logic_vector(7 downto 0)  := (others=>'0');
@@ -215,6 +248,13 @@ architecture simulation of axis_tb is
   signal demux1_tready_i      : std_logic := '0';
   signal demux1_tvalid_o      : std_logic;
   signal demux1_tlast_o       : std_logic;
+
+  signal fifo2_tdata_o       : std_logic_vector(31 downto 0);
+  signal fifo2_tuser_o       : std_logic_vector(7 downto 0);
+  signal fifo2_tdest_o       : std_logic_vector(7 downto 0);
+  signal fifo2_tready_i      : std_logic := '0';
+  signal fifo2_tvalid_o      : std_logic;
+  signal fifo2_tlast_o       : std_logic;
 
 begin
 
@@ -396,7 +436,7 @@ begin
       m1_tdata_o  => demux1_tdata_o,
       m1_tuser_o  => demux1_tuser_o,
       m1_tdest_o  => demux1_tdest_o,
-      m1_tready_i => '1',--demux1_tready_i,
+      m1_tready_i => demux1_tready_i,
       m1_tvalid_o => demux1_tvalid_o,
       m1_tlast_o  => demux1_tlast_o,
       s_tdata_i   => mux_tdata_o,
@@ -406,5 +446,38 @@ begin
       s_tvalid_i  => mux_tvalid_o,
       s_tlast_i   => mux_tlast_o
     );
+
+    smart_axis_packet_fifo_i : smart_axis_packet_fifo
+    generic map (
+      ram_type     => blockram,
+      fifo_size    => 12,
+      meta_size    => 5,
+      tdata_size   => 32,
+      tdest_size   => 8,
+      tuser_size   => 8,
+      tuser_enable => true,
+      tdest_enable => true
+    )
+    port map (
+      clk_i           => clk_i,
+      rst_i           => rst_i,
+      s_tdata_i       => demux1_tdata_o,
+      s_tuser_i       => demux1_tuser_o,
+      s_tdest_i       => demux1_tdest_o,
+      s_tready_o      => demux1_tready_i,
+      s_tvalid_i      => demux1_tvalid_o,
+      s_tlast_i       => demux1_tlast_o,
+      m_tdata_o       => fifo2_tdata_o,
+      m_tuser_o       => fifo2_tuser_o,
+      m_tdest_o       => fifo2_tdest_o,
+      m_tready_i      => fifo2_tready_i,
+      m_tvalid_o      => fifo2_tvalid_o,
+      m_tlast_o       => fifo2_tlast_o,
+      flush_i         => '0',
+      abort_i         => '0',
+      fifo_status_a_o => open,
+      fifo_status_b_o => open
+    );
+
 
 end simulation;

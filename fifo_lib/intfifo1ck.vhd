@@ -12,7 +12,7 @@ library stdblocks;
 library stdblocks;
     use stdblocks.fifo_lib.all;
 
-entity fifo_int is
+entity intfifo1ck is
     generic (
       ram_type  : fifo_t := blockram;
       port_size : integer := 8;
@@ -34,9 +34,9 @@ entity fifo_int is
       pointerb_en_i : in  std_logic;
       fifo_status_o : out fifo_status
     );
-end fifo_int;
+end intfifo1ck;
 
-architecture behavioral of fifo_int is
+architecture behavioral of intfifo1ck is
 
   constant debug : boolean := false;
 
