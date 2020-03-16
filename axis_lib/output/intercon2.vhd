@@ -51,7 +51,7 @@ entity intercon2 is
       s1_tdest_i  : in  std_logic_vector(tdest_size-1 downto 0);
       s1_tready_o : out std_logic;
       s1_tvalid_i : in  std_logic;
-      s1_tlast_i  : in  std_logic;
+      s1_tlast_i  : in  std_logic
     );
 end intercon2;
 

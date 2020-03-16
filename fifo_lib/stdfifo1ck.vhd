@@ -35,15 +35,12 @@ architecture behavioral of stdfifo1ck is
 
   constant debug : boolean := false;
 
-  signal addri_cnt    : std_logic_vector(fifo_size-1 downto 0);
-  signal addro_s      : std_logic_vector(fifo_size-1 downto 0);
-  signal addro_cnt    : std_logic_vector(fifo_size-1 downto 0);
-  signal fifo_mq      : fifo_state_t := steady_st;
+  signal addri_cnt    : std_logic_vector(fifo_size-1 downto 0) := (others=>'0');
+  signal addro_cnt    : std_logic_vector(fifo_size-1 downto 0) := (others=>'0');
+  signal fifo_mq      : fifo_state_t := empty_st;
 
-  signal enb_s        : std_logic;
   signal ena_i_s      : std_logic;
   signal enb_i_s      : std_logic;
-  signal addro_cnt_en : std_logic;
 
 begin
 
@@ -64,9 +61,11 @@ begin
   end process;
 
   --output
-  enb_i_s <= '0' when fifo_mq = empty_st else
-             '0' when fifo_mq = underflow_st else
+  enb_i_s <= '0'    when fifo_mq = underflow_st else
+             '0'    when fifo_mq = n_empty_st   else
+             ena_i  when fifo_mq = empty_st     else
              enb_i;
+
   output_p : process(clk_i, rst_i)
   begin
     if rst_i = '1' then
@@ -87,11 +86,6 @@ begin
     end if;
   end process;
 
-  --fallthrough
-  addro_s <= addro_cnt  when fifo_mq = empty_st else
-             addro_cnt + 1;
-  enb_s   <= '1'    when fifo_mq = empty_st else
-             enb_i;
 
   dp_ram_u : dp_ram
     generic map (
@@ -106,18 +100,20 @@ begin
       rstb_i  => rst_i,
       addra_i => addri_cnt,
       dataa_i => dataa_i,
-      addrb_i => addro_s,
+      addrb_i => addro_cnt,
       datab_o => datab_o,
       ena_i   => '1',
-      enb_i   => enb_s,
-      wea_i   => ena_i
+      wea_i   => ena_i,
+      enb_i   => enb_i_s
     );
 
   fifo_status_o.overflow  <= '1' when fifo_mq = overflow_st  else '0';
   fifo_status_o.full      <= '1' when fifo_mq = full_st      else '0';
   fifo_status_o.gofull    <= '1' when fifo_mq = gofull_st    else '0';
   fifo_status_o.steady    <= '1' when fifo_mq = steady_st    else '0';
-  fifo_status_o.goempty   <= '1' when fifo_mq = goempty_st   else '0';
+  fifo_status_o.goempty   <= '1' when fifo_mq = goempty_st   else
+                             '1' when fifo_mq = n_empty_st   else
+                             '0';
   fifo_status_o.empty     <= '1' when fifo_mq = empty_st     else '0';
   fifo_status_o.underflow <= '1' when fifo_mq = underflow_st else '0';
 

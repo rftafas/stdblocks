@@ -49,6 +49,7 @@ begin
 
 
   process
+    variable counter_v : integer := 20;
   begin
     enb_i   <= '0';
     ena_i   <= '0';
@@ -56,7 +57,8 @@ begin
     wait until rst_i = '0';
     wait until rising_edge(clk_i);
     --write
-    for j in 16 downto 1 loop
+    report "starting write test" severity note;
+    for j in 3 downto 0 loop
       ena_i   <= '1';
       dataa_i <= to_std_logic_vector(j,dataa_i'length);
       wait until rising_edge(clk_i);
@@ -65,11 +67,31 @@ begin
     wait until rising_edge(clk_i);
     write_ok <= true;
     --read
-    for j in 1 to 16 loop
+    wait until rising_edge(clk_i);
+    report "starting read test" severity note;
+    for j in 0 to 3 loop
       enb_i   <= '1';
       wait until rising_edge(clk_i);
     end loop;
     enb_i   <= '0';
+    wait for 100 ns;
+    wait until rising_edge(clk_i);
+    report "starting write forever" severity note;
+    dataa_i   <= to_std_logic_vector(counter_v,dataa_i'length);
+    wait until rising_edge(clk_i);
+    while true loop
+      ena_i <= not ena_i;
+      if ena_i = '1' then
+        counter_v := counter_v + 1;
+        dataa_i   <= to_std_logic_vector(counter_v,dataa_i'length);
+      end if;
+      if fifo_status_o.steady = '1' then
+        enb_i <= not ena_i;
+      else
+        enb_i <= '0';
+      end if;
+      wait until rising_edge(clk_i);
+    end loop;
     wait;
   end process;
 
@@ -80,11 +102,23 @@ begin
     wait until write_ok;
     wait until rising_edge(clkb_i);
     --read
-    for j in 1 to 16 loop
+    for j in 0 to 3 loop
       enb2_i   <= '1';
       wait until rising_edge(clkb_i);
     end loop;
     enb2_i   <= '0';
+    wait until fifo_status_b_o.steady = '1';
+    wait until rising_edge(clkb_i);
+    while true loop
+      if fifo_status_b_o.steady = '1' then
+        enb2_i <= not enb2_i;
+      elsif fifo_status_b_o.full = '1' then
+        enb2_i <= '1';
+      else
+        enb2_i <= '0';
+      end if;
+      wait until rising_edge(clk_i);
+    end loop;
     wait;
   end process;
 

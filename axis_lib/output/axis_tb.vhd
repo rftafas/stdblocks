@@ -167,25 +167,24 @@ architecture simulation of axis_tb is
       tdest_enable : boolean := false
     );
     port (
-      clk_i           : in  std_logic;
-      rst_i           : in  std_logic;
-      s_tdata_i       : in  std_logic_vector(tdata_size-1 downto 0);
-      s_tuser_i       : in  std_logic_vector(tuser_size-1 downto 0);
-      s_tdest_i       : in  std_logic_vector(tdest_size-1 downto 0);
-      s_tready_o      : out std_logic;
-      s_tvalid_i      : in  std_logic;
-      s_tlast_i       : in  std_logic;
-      m_tdata_o       : out std_logic_vector(tdata_size-1 downto 0);
-      m_tuser_o       : out std_logic_vector(tuser_size-1 downto 0);
-      m_tdest_o       : out std_logic_vector(tdest_size-1 downto 0);
-      m_tready_i      : in  std_logic;
-      m_tvalid_o      : out std_logic;
-      m_tlast_o       : out std_logic;
-      flush_i         : in  std_logic;
-      abort_i         : in  std_logic;
-      repeat_i        : in  std_logic;
-      fifo_status_a_o : out fifo_status;
-      fifo_status_b_o : out fifo_status
+      clk_i         : in  std_logic;
+      rst_i         : in  std_logic;
+      s_tdata_i     : in  std_logic_vector(tdata_size-1 downto 0);
+      s_tuser_i     : in  std_logic_vector(tuser_size-1 downto 0);
+      s_tdest_i     : in  std_logic_vector(tdest_size-1 downto 0);
+      s_tready_o    : out std_logic;
+      s_tvalid_i    : in  std_logic;
+      s_tlast_i     : in  std_logic;
+      m_tdata_o     : out std_logic_vector(tdata_size-1 downto 0);
+      m_tuser_o     : out std_logic_vector(tuser_size-1 downto 0);
+      m_tdest_o     : out std_logic_vector(tdest_size-1 downto 0);
+      m_tready_i    : in  std_logic;
+      m_tvalid_o    : out std_logic;
+      m_tlast_o     : out std_logic;
+      flush_i       : in  std_logic;
+      abort_i       : in  std_logic;
+      repeat_i      : in  std_logic;
+      fifo_status_o : out fifo_status
     );
   end component;
 
@@ -477,8 +476,7 @@ begin
       flush_i         => '0',
       abort_i         => '0',
       repeat_i        => '0',
-      fifo_status_a_o => open,
-      fifo_status_b_o => open
+      fifo_status_o => open
     );
 
 
