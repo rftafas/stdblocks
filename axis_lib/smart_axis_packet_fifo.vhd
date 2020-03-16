@@ -47,8 +47,7 @@ library stdblocks;
         abort_i      : in  std_logic;
         repeat_i     : in  std_logic;
 
-        fifo_status_a_o : out fifo_status;
-        fifo_status_b_o : out fifo_status
+        fifo_status_o : out fifo_status
       );
   end smart_axis_packet_fifo;
 
@@ -74,10 +73,10 @@ architecture behavioral of smart_axis_packet_fifo is
   signal meta_data_i_s    : std_logic_vector(meta_port_size-1 downto 0);
   signal meta_data_o_s    : std_logic_vector(meta_port_size-1 downto 0);
 
-  signal rd_pointer_s     : std_logic_vector(fifo_size-1 downto 0);
-  signal wr_pointer_s     : std_logic_vector(fifo_size-1 downto 0);
-  signal end_pointer_s    : std_logic_vector(fifo_size-1 downto 0);
-  signal abort_pointer_s  : std_logic_vector(fifo_size-1 downto 0);
+  signal rd_pointer_s     : std_logic_vector(fifo_size-1 downto 0) := (others=>'0');
+  signal wr_pointer_s     : std_logic_vector(fifo_size-1 downto 0) := (others=>'0');
+  signal end_pointer_s    : std_logic_vector(fifo_size-1 downto 0) := (others=>'0');
+  signal abort_pointer_s  : std_logic_vector(fifo_size-1 downto 0) := (others=>'0');
 
   signal flush_s          : std_logic;
   signal m_tlast_o_s      : std_logic;
@@ -102,7 +101,7 @@ begin
   m_tlast_o     <= m_tlast_o_s;
 
   meta_ena_i_s <= '0' when abort_i     = '1'                   else
-                  '1' when s_tlast_i   = '1' and enb_i_s = '1' else
+                  '1' when s_tlast_i   = '1' and ena_i_s = '1' else
                   '0';
 
   meta_enb_i_s <= '1' when flush_i     = '1'                   else
@@ -149,7 +148,7 @@ begin
       clk_i   => clk_i,
       rst_i   => rst_i,
       dataa_i  => s_tdata_i,
-      datab_o  => meta_data_o_s,
+      datab_o  => m_tdata_o,
       ena_i    => ena_i_s,
       enb_i    => enb_i_s,
 
@@ -162,6 +161,8 @@ begin
 
       fifo_status_o => fifo_status_s
     );
+
+    fifo_status_o <= fifo_status_s;
 
     process(all)
     begin

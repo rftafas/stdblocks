@@ -38,7 +38,9 @@ end intfifo1ck;
 
 architecture behavioral of intfifo1ck is
 
-  constant debug : boolean := false;
+  constant debug   : boolean := false;
+  constant full_c  : integer := 2**fifo_size;
+  constant empty_c : integer := 0;
 
   signal addri_cnt     : std_logic_vector(fifo_size-1 downto 0);
   signal addro_s       : std_logic_vector(fifo_size-1 downto 0);
@@ -120,7 +122,7 @@ begin
     );
 
   --this is costy. but this fifo may jump addresses so state machine is a no-go.
-  delta_s = addri_cnt - addro_cnt;
+  delta_s <= addri_cnt - addro_cnt;
 
   fifo_status_s.overflow  <= '1' when delta_s =  full_c     and ena_i = '1'          else '0';
   fifo_status_s.full      <= '1' when delta_s =  full_c                              else '0';
