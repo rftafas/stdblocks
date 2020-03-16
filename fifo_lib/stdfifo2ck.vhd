@@ -36,28 +36,27 @@ end stdfifo2ck;
 
 architecture behavioral of stdfifo2ck is
 
-  constant debug : boolean := false;
+  constant debug        : boolean := true;
 
-  signal input_fifo_mq      : fifo_state_t := steady_st;
-  signal output_fifo_mq     : fifo_state_t := steady_st;
+  signal input_fifo_mq  : fifo_state_t := steady_st;
+  signal output_fifo_mq : fifo_state_t := steady_st;
 
-  signal addri_cnt     : gray_vector(fifo_size-1 downto 0);
-  signal addro_cnt     : gray_vector(fifo_size-1 downto 0);
-  signal addro_s       : gray_vector(fifo_size-1 downto 0);
+  signal addri_cnt      : gray_vector(fifo_size-1 downto 0);
+  signal addro_cnt      : gray_vector(fifo_size-1 downto 0);
 
-  signal addri_cnt_s   : gray_vector(fifo_size-1 downto 0);
-  signal addro_cnt_s   : gray_vector(fifo_size-1 downto 0);
+  signal addri_cnt_s    : gray_vector(fifo_size-1 downto 0);
+  signal addro_cnt_s    : gray_vector(fifo_size-1 downto 0);
 
-  signal ena_i_s       : std_logic;
-  signal ena_sync_s    : std_logic;
-  signal ena_up_s      : std_logic;
+  signal ena_i_s        : std_logic;
+  signal ena_sync_s     : std_logic;
+  signal ena_up_s       : std_logic;
 
-  signal enb_i_s       : std_logic;
-  signal enb_sync_s    : std_logic;
-  signal enb_up_s      : std_logic;
+  signal enb_i_s        : std_logic;
+  signal enb_sync_s     : std_logic;
+  signal enb_up_s       : std_logic;
 
-  signal underflow_s   : std_logic;
-  signal overflow_s    : std_logic;
+  signal underflow_s    : std_logic;
+  signal overflow_s     : std_logic;
 
 begin
 
