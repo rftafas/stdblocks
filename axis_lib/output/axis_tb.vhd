@@ -475,6 +475,7 @@ begin
       m_tlast_o       => fifo2_tlast_o,
       flush_i         => '0',
       abort_i         => '0',
+      repeat_i        => '0',
       fifo_status_a_o => open,
       fifo_status_b_o => open
     );
