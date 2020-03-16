@@ -183,6 +183,7 @@ architecture simulation of axis_tb is
       m_tlast_o       : out std_logic;
       flush_i         : in  std_logic;
       abort_i         : in  std_logic;
+      repeat_i        : in  std_logic;
       fifo_status_a_o : out fifo_status;
       fifo_status_b_o : out fifo_status
     );
