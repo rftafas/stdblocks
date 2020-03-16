@@ -40,21 +40,23 @@ architecture behavioral of intfifo1ck is
 
   constant debug : boolean := false;
 
-  signal addri_cnt    : std_logic_vector(fifo_size-1 downto 0);
-  signal addro_s      : std_logic_vector(fifo_size-1 downto 0);
-  signal addro_cnt    : std_logic_vector(fifo_size-1 downto 0);
-  signal fifo_mq      : fifo_state_t := steady_st;
+  signal addri_cnt     : std_logic_vector(fifo_size-1 downto 0);
+  signal addro_s       : std_logic_vector(fifo_size-1 downto 0);
+  signal addro_cnt     : std_logic_vector(fifo_size-1 downto 0);
 
-  signal enb_s        : std_logic;
-  signal ena_i_s      : std_logic;
-  signal enb_i_s      : std_logic;
-  signal addro_cnt_en : std_logic;
+  signal enb_s         : std_logic;
+  signal ena_i_s       : std_logic;
+  signal enb_i_s       : std_logic;
+  signal addro_cnt_en  : std_logic;
+
+  signal delta_s       : std_logic_vector(fifo_size-1 downto 0);
+  signal fifo_status_s : fifo_status;
 
 begin
 
   --Input
-  ena_i_s <= '0' when fifo_mq = full_st else
-             '0' when fifo_mq = overflow_st else
+  ena_i_s <= '0' when fifo_status_s.full     = '1' else
+             '0' when fifo_status_s.overflow = '1' else
              ena_i;
 
   input_p : process(clk_i, rst_i)
@@ -72,9 +74,10 @@ begin
   pointera_o <= addri_cnt;
 
   --output
-  enb_i_s <= '0' when fifo_mq = empty_st else
-             '0' when fifo_mq = underflow_st else
+  enb_i_s <= '0' when fifo_status_s.empty     = '1' else
+             '0' when fifo_status_s.underflow = '1' else
              enb_i;
+
   output_p : process(clk_i, rst_i)
   begin
     if rst_i = '1' then
@@ -89,19 +92,11 @@ begin
   end process;
   pointerb_o <= addro_cnt;
 
-  control_p : process(clk_i, rst_i)
-  begin
-    if rst_i = '1' then
-      fifo_mq <= empty_st;
-    elsif clk_i'event and clk_i = '1' then
-      fifo_mq <= sync_state(ena_i,enb_i,addri_cnt,addro_cnt,fifo_mq);
-    end if;
-  end process;
-
   --fallthrough
-  addro_s <= addro_cnt  when fifo_mq = empty_st else
+  addro_s <= addro_cnt  when fifo_status_s.empty = '1' else
              addro_cnt + 1;
-  enb_s   <= '1'    when fifo_mq = empty_st else
+
+  enb_s   <= '1' when fifo_status_s.empty = '1' else
              enb_i;
 
   dp_ram_u : dp_ram
@@ -124,13 +119,18 @@ begin
       wea_i   => ena_i
     );
 
-  fifo_status_o.overflow  <= '1' when fifo_mq = overflow_st  else '0';
-  fifo_status_o.full      <= '1' when fifo_mq = full_st      else '0';
-  fifo_status_o.gofull    <= '1' when fifo_mq = gofull_st    else '0';
-  fifo_status_o.steady    <= '1' when fifo_mq = steady_st    else '0';
-  fifo_status_o.goempty   <= '1' when fifo_mq = goempty_st   else '0';
-  fifo_status_o.empty     <= '1' when fifo_mq = empty_st     else '0';
-  fifo_status_o.underflow <= '1' when fifo_mq = underflow_st else '0';
+  --this is costy. but this fifo may jump addresses so state machine is a no-go.
+  delta_s = addri_cnt - addro_cnt;
+
+  fifo_status_s.overflow  <= '1' when delta_s =  full_c     and ena_i = '1'          else '0';
+  fifo_status_s.full      <= '1' when delta_s =  full_c                              else '0';
+  fifo_status_s.gofull    <= '1' when delta_s >= 3*full_c/4 and delta_s < full_c     else '0';
+  fifo_status_s.steady    <= '1' when delta_s >  full_c/4   and delta_s < 3*full_c/4 else '0';
+  fifo_status_s.goempty   <= '1' when delta_s <= full_c/4   and delta_s > empty_c    else '0';
+  fifo_status_s.empty     <= '1' when delta_s =  empty_c                             else '0';
+  fifo_status_s.underflow <= '1' when delta_s =  empty_c    and enb_i   = '1'        else '0';
+
+  fifo_status_o <= fifo_status_s;
 
   debug_gen : if debug generate
     signal delta_s : std_logic_vector(addri_cnt'range);

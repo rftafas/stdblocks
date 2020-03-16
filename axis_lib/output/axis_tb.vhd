@@ -459,8 +459,8 @@ begin
       tdest_enable => true
     )
     port map (
-      clk_i           => clk_i,
-      rst_i           => rst_i,
+      clk_i           => clk_s,
+      rst_i           => rst_s,
       s_tdata_i       => demux1_tdata_o,
       s_tuser_i       => demux1_tuser_o,
       s_tdest_i       => demux1_tdest_o,

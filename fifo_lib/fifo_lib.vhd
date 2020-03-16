@@ -84,6 +84,29 @@ package fifo_lib is
     );
   end component srfifo1ck;
 
+  component intfifo1ck is
+    generic (
+      ram_type  : fifo_t := blockram;
+      port_size : integer := 8;
+      fifo_size : integer := 8
+    );
+    port (
+      clk_i         : in  std_logic;
+      rst_i         : in  std_logic;
+      dataa_i       : in  std_logic_vector(port_size-1 downto 0);
+      datab_o       : out std_logic_vector(port_size-1 downto 0);
+      ena_i         : in  std_logic;
+      enb_i         : in  std_logic;
+      pointera_i    : in  std_logic_vector(fifo_size-1 downto 0);
+      pointera_o    : out std_logic_vector(fifo_size-1 downto 0);
+      pointera_en_i : in  std_logic;
+      pointerb_i    : in  std_logic_vector(fifo_size-1 downto 0);
+      pointerb_o    : out std_logic_vector(fifo_size-1 downto 0);
+      pointerb_en_i : in  std_logic;
+      fifo_status_o : out fifo_status
+    );
+  end component;
+
 end package;
 
 package body fifo_lib is
