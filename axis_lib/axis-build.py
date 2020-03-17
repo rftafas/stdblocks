@@ -106,7 +106,7 @@ def axi_custom( entity_name, number_slaves, number_masters):
     output_file_name = "output/"+entity_name+".vhd"
     output_file = open(output_file_name,"w+")
 
-    concat_source = open("axis_custom.vhd","r")
+    concat_source = open("templates/axis_custom.vhd","r")
     code_lines = concat_source.readlines()
 
     for line in code_lines:
@@ -134,7 +134,7 @@ def axi_concat( entity_name, number_elements):
     output_file_name = "output/"+entity_name+".vhd"
     output_file = open(output_file_name,"w+")
 
-    concat_source = open("axis_concat.vhd","r")
+    concat_source = open("templates/axis_concat.vhd","r")
     code_lines = concat_source.readlines()
 
     for line in code_lines:
@@ -178,7 +178,7 @@ def axis_mux ( entity_name, number_elements):
     output_file_name = "output/"+entity_name+".vhd"
     output_file = open(output_file_name,"w+")
 
-    concat_source = open("axis_mux.vhd","r")
+    concat_source = open("templates/axis_mux.vhd","r")
     code_lines = concat_source.readlines()
 
     for line in code_lines:
@@ -219,7 +219,7 @@ def axis_demux ( entity_name, number_elements):
     output_file_name = "output/"+entity_name+".vhd"
     output_file = open(output_file_name,"w+")
 
-    concat_source = open("axis_demux.vhd","r")
+    concat_source = open("templates/axis_demux.vhd","r")
     code_lines = concat_source.readlines()
 
     for line in code_lines:
@@ -244,7 +244,7 @@ def axis_aligner ( entity_name, number_elements):
     output_file_name = "output/"+entity_name+".vhd"
     output_file = open(output_file_name,"w+")
 
-    concat_source = open("axis_aligner.vhd","r")
+    concat_source = open("templates/axis_aligner.vhd","r")
     code_lines = concat_source.readlines()
 
     for line in code_lines:
@@ -295,7 +295,7 @@ def axis_intercon ( entity_name, number_slaves, number_masters):
     output_file_name = "output/"+entity_name+".vhd"
     output_file = open(output_file_name,"w+")
 
-    concat_source = open("axis_intercon.vhd","r")
+    concat_source = open("templates/axis_intercon.vhd","r")
 
     code_lines = concat_source.readlines()
 
@@ -351,7 +351,7 @@ def axis_broadcast ( entity_name, number_masters):
     output_file_name = "output/"+entity_name+".vhd"
     output_file = open(output_file_name,"w+")
 
-    concat_source = open("axis_broadcast.vhd","r")
+    concat_source = open("templates/axis_broadcast.vhd","r")
 
 
     code_lines = concat_source.readlines()
@@ -399,34 +399,69 @@ except:
     error_help()
 
 if (command == "custom"):
-    entity_name = sys.argv[2]
-    number_slaves = int(sys.argv[3])
-    number_masters = int(sys.argv[4])
+    try:
+        entity_name = sys.argv[2]
+        number_slaves = int(sys.argv[3])
+        number_masters = int(sys.argv[4])
+    except:
+        print("Something is missing.\r\n")
+        print("python axi-build.py custom <entity name> <number of slaves> <number of masters>\r\n")
+        sys.exit()
     success = axi_custom( entity_name, number_slaves, number_masters)
 elif (command == "concat"):
-    entity_name = sys.argv[2]
-    number_slaves = int(sys.argv[3])
+    try:
+        entity_name = sys.argv[2]
+        number_masters = int(sys.argv[3])
+    except:
+        print("Something is missing.\r\n")
+        print("python axi-build.py concat <entity name> <number of slaves>\r\n")
+        sys.exit()
     success = axi_concat(entity_name,number_slaves)
 elif (command == "mux"):
-    entity_name = sys.argv[2]
-    number_slaves = int(sys.argv[3])
+    try:
+        entity_name = sys.argv[2]
+        number_slaves = int(sys.argv[3])
+    except:
+        print("Something is missing.\r\n")
+        print("python axi-build.py mux <entity name> <number of slaves>\r\n")
+        sys.exit()
     success = axis_mux(entity_name,number_slaves)
 elif (command == "demux"):
-    entity_name = sys.argv[2]
-    number_slaves = int(sys.argv[3])
-    success = axis_demux(entity_name,number_slaves)
+    try:
+        entity_name = sys.argv[2]
+        number_masters = int(sys.argv[3])
+    except:
+        print("Something is missing.\r\n")
+        print("python axi-build.py demux <entity name> <number of masters>\r\n")
+        sys.exit()
+    success = axis_demux(entity_name,number_masters)
 elif (command == "aligner"):
-    entity_name = sys.argv[2]
-    number_slaves = int(sys.argv[3])
+    try:
+        entity_name = sys.argv[2]
+        number_slaves = int(sys.argv[3])
+    except:
+        print("Something is missing.\r\n")
+        print("python axi-build.py aligner <entity name> <number of ports>\r\n")
+        sys.exit()
     success = axis_aligner(entity_name,number_slaves)
 elif (command == "intercon"):
-    entity_name = sys.argv[2]
-    number_slaves = int(sys.argv[3])
-    number_masters = int(sys.argv[4])
+    try:
+        entity_name = sys.argv[2]
+        number_slaves = int(sys.argv[3])
+        number_masters = int(sys.argv[4])
+    except:
+        print("Something is missing.\r\n")
+        print("python axi-build.py intercon <entity name> <number of slaves> <number of masters>\r\n")
+        sys.exit()
     success = axis_intercon(entity_name,number_slaves,number_masters)
 elif (command == "broadcast"):
-    entity_name = sys.argv[2]
-    number_masters = int(sys.argv[3])
+    try:
+        entity_name = sys.argv[2]
+        number_masters = int(sys.argv[3])
+    except:
+        print("Something is missing.\r\n")
+        print("python axi-build.py broadcast <entity name> <number of masters>\r\n")
+        sys.exit()
     success = axis_broadcast(entity_name,number_masters)
 else:
     print("Command not supported or yet to be implemented.")
