@@ -117,8 +117,9 @@ begin
     );
 
   enb_i_s <= '0'      when output_fifo_mq = underflow_st else
-             '0'      when output_fifo_mq = n_empty_st   else
-             ena_up_s when output_fifo_mq = empty_st     else
+             '1'      when output_fifo_mq = f_empty_st   else
+             '0'      when output_fifo_mq = t_empty_st   else
+             '0'      when output_fifo_mq = empty_st     else
              enb_i;
 
   output_p : process(clkb_i, rstb_i)
@@ -180,8 +181,8 @@ begin
       dataa_i => dataa_i,
       addrb_i => to_std_logic_vector(addro_cnt),
       datab_o => datab_o,
-      ena_i   => ena_i,
-      wea_i   => ena_i,
+      ena_i   => '1',
+      wea_i   => ena_i_s,
       enb_i   => enb_i_s
     );
 

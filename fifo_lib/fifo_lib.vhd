@@ -22,7 +22,7 @@ package fifo_lib is
   type fifo_t is (blockram, ultra, registers, distributed);
   function fifo_type_dec ( ram_type : fifo_t ) return mem_t;
 
-  type fifo_state_t is (underflow_st, empty_st, n_empty_st, goempty_st, steady_st, gofull_st, full_st, overflow_st);
+  type fifo_state_t is (underflow_st, empty_st, f_empty_st, t_empty_st, goempty_st, steady_st, gofull_st, full_st, overflow_st);
   function sync_state (
     ien : std_logic; oen : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
   ) return fifo_state_t;
@@ -144,7 +144,6 @@ package body fifo_lib is
   begin
     tmp   := current_state;
     delta := unsigned(iaddr - oaddr);
-
     up := ien and not oen;
     dn := oen and not ien;
 
@@ -153,11 +152,18 @@ package body fifo_lib is
         if dn = '1' then
           tmp := underflow_st;
         elsif up = '1' then
-          tmp:= n_empty_st;
+          tmp:= f_empty_st;
         end if;
 
-      when n_empty_st =>
-        if dn = '1' then
+      when f_empty_st =>
+        if up = '1' then
+          tmp:= goempty_st;
+        else
+          tmp:= t_empty_st;
+        end if;
+
+      when t_empty_st =>
+        if dn  = '1' then
           tmp := empty_st;
         elsif up = '1' then
           tmp:= goempty_st;
@@ -165,7 +171,7 @@ package body fifo_lib is
 
       when goempty_st =>
         if delta = 1 and dn  = '1' then
-          tmp :=  n_empty_st;
+          tmp := t_empty_st;
         elsif delta = fifo_length/4 then
           tmp:= steady_st;
         end if;
@@ -213,10 +219,14 @@ package body fifo_lib is
   ) return fifo_state_t is
     variable tmp         : fifo_state_t := steady_st;
     variable delta       : unsigned(iaddr'range) := (others=>'0');
+    variable up          : std_logic             := '0';
+    variable dn          : std_logic             := '0';
     variable fifo_length : integer               := 2**iaddr'length;
   begin
     tmp   := current_state;
     delta := unsigned(iaddr - oaddr);
+    up := ien and not oen;
+    dn := oen and not ien;
 
 		case current_state is
 
@@ -226,22 +236,29 @@ package body fifo_lib is
         end if;
 
       when empty_st =>
-        if oen = '1' then
+        if dn = '1' then
           tmp := underflow_st;
-        elsif ien = '1' then
-          tmp:= n_empty_st;
+        elsif up = '1' then
+          tmp:= f_empty_st;
         end if;
 
-      when n_empty_st =>
-        if delta = 0 and oen = '1' then
-          tmp := empty_st;
-        elsif delta > 1 then
+      when f_empty_st =>
+        if delta > 1 then
           tmp:= goempty_st;
+        else
+          tmp:= t_empty_st;
+        end if;
+
+      when t_empty_st =>
+        if delta > 1 then
+          tmp:= goempty_st;
+        elsif dn = '1' then
+          tmp := empty_st;
         end if;
 
       when goempty_st =>
-        if delta = 1 and oen = '1' then
-          tmp := n_empty_st;
+        if delta = 1 and dn = '1' then
+          tmp := t_empty_st;
         elsif delta >= fifo_length/4 then
           tmp:= steady_st;
         end if;
@@ -254,14 +271,14 @@ package body fifo_lib is
         end if;
 
       when gofull_st =>
-        if delta = fifo_length-1 and ien = '1' then
+        if delta = fifo_length-1 and up = '1' then
           tmp:= full_st;
         elsif delta < 3*fifo_length/4 then
           tmp :=  steady_st;
         end if;
 
       when full_st =>
-        if ien = '1' then
+        if up = '1' then
           tmp :=  overflow_st;
         elsif delta = fifo_length - 1 then
           tmp := gofull_st;
@@ -301,6 +318,8 @@ package body fifo_lib is
       tmp.empty     := '1';
     elsif mq_input = underflow_st then
       tmp.underflow := '1';
+    elsif mq_input = f_empty_st then
+      tmp.empty     := '1';
     else
       tmp.goempty   := '1';
     end if;

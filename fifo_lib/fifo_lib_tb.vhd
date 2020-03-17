@@ -8,6 +8,8 @@ library ieee;
 library expert;
     use expert.std_logic_expert.all;
 library stdblocks;
+    use stdblocks.ram_lib.all;
+library stdblocks;
     use stdblocks.fifo_lib.all;
 
 
@@ -58,7 +60,7 @@ begin
     wait until rising_edge(clk_i);
     --write
     report "starting write test" severity note;
-    for j in 3 downto 0 loop
+    for j in 0 downto 0 loop
       ena_i   <= '1';
       dataa_i <= to_std_logic_vector(j+5,dataa_i'length);
       wait until rising_edge(clk_i);
@@ -69,7 +71,7 @@ begin
     --read
     wait until rising_edge(clk_i);
     report "starting read test" severity note;
-    for j in 0 to 3 loop
+    for j in 0 downto 0 loop
       enb_i   <= '1';
       wait until rising_edge(clk_i);
     end loop;
@@ -102,7 +104,7 @@ begin
     wait until fifo_status_b_o.empty = '0';
     wait until rising_edge(clkb_i);
     --read
-    for j in 0 to 3 loop
+    for j in 0 to 0 loop
       enb2_i   <= '1';
       wait until rising_edge(clkb_i);
     end loop;

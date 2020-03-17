@@ -265,7 +265,7 @@ begin
   begin
     wait until rst_s = '0';
     for j in 0 to packet_size loop
-      broadcast_tdata_i  <= to_std_logic_vector(j,32);
+      broadcast_tdata_i  <= to_std_logic_vector(20+j,32);
       broadcast_tvalid_i <= '1';
       broadcast_tlast_i  <= '0';
       if j = packet_size then
@@ -470,7 +470,7 @@ begin
       m_tdata_o       => fifo2_tdata_o,
       m_tuser_o       => fifo2_tuser_o,
       m_tdest_o       => fifo2_tdest_o,
-      m_tready_i      => fifo2_tready_i,
+      m_tready_i      => '1',--fifo2_tready_i,
       m_tvalid_o      => fifo2_tvalid_o,
       m_tlast_o       => fifo2_tlast_o,
       flush_i         => '0',

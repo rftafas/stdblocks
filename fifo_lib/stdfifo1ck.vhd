@@ -61,9 +61,10 @@ begin
   end process;
 
   --output
-  enb_i_s <= '0'    when fifo_mq = underflow_st else
-             '0'    when fifo_mq = n_empty_st   else
-             ena_i  when fifo_mq = empty_st     else
+  enb_i_s <= '0'   when fifo_mq = underflow_st else
+             '1'   when fifo_mq = f_empty_st   else
+             '0'   when fifo_mq = t_empty_st   else
+             '0'   when fifo_mq = empty_st     else
              enb_i;
 
   output_p : process(clk_i, rst_i)
@@ -103,7 +104,7 @@ begin
       addrb_i => addro_cnt,
       datab_o => datab_o,
       ena_i   => '1',
-      wea_i   => ena_i,
+      wea_i   => ena_i_s,
       enb_i   => enb_i_s
     );
 
