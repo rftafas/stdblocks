@@ -8,6 +8,8 @@ library ieee;
 library expert;
     use expert.std_logic_expert.all;
 library stdblocks;
+    use stdblocks.ram_lib.all;
+library stdblocks;
     use stdblocks.fifo_lib.all;
 
 
@@ -45,10 +47,11 @@ begin
   clk_i <= not clk_i after 10 ns;
 
   rstb_i  <= '1', '0' after 120 ns;
-  clkb_i <= not clkb_i after 30 ns;
+  clkb_i <= not clkb_i after 20 ns;
 
 
   process
+    variable counter_v : integer := 20;
   begin
     enb_i   <= '0';
     ena_i   <= '0';
@@ -56,20 +59,41 @@ begin
     wait until rst_i = '0';
     wait until rising_edge(clk_i);
     --write
-    for j in 16 downto 1 loop
+    report "starting write test" severity note;
+    for j in 0 downto 0 loop
       ena_i   <= '1';
-      dataa_i <= to_std_logic_vector(j,dataa_i'length);
+      dataa_i <= to_std_logic_vector(j+5,dataa_i'length);
       wait until rising_edge(clk_i);
     end loop;
     ena_i   <= '0';
     wait until rising_edge(clk_i);
     write_ok <= true;
     --read
-    for j in 1 to 16 loop
+    wait until rising_edge(clk_i);
+    report "starting read test" severity note;
+    for j in 0 downto 0 loop
       enb_i   <= '1';
       wait until rising_edge(clk_i);
     end loop;
     enb_i   <= '0';
+    wait for 500 ns;
+    wait until rising_edge(clk_i);
+    report "starting write forever" severity note;
+    dataa_i   <= to_std_logic_vector(counter_v,dataa_i'length);
+    wait until rising_edge(clk_i);
+    while true loop
+      ena_i <= not ena_i;
+      if ena_i = '1' then
+        counter_v := counter_v + 1;
+        dataa_i   <= to_std_logic_vector(counter_v,dataa_i'length);
+      end if;
+      if fifo_status_o.steady = '1' then
+        enb_i <= not ena_i;
+      else
+        enb_i <= '0';
+      end if;
+      wait until rising_edge(clk_i);
+    end loop;
     wait;
   end process;
 
@@ -77,14 +101,28 @@ begin
   begin
     enb2_i   <= '0';
     wait until rstb_i = '0';
-    wait until write_ok;
+    wait until fifo_status_b_o.empty = '0';
     wait until rising_edge(clkb_i);
     --read
-    for j in 1 to 16 loop
+    for j in 0 to 0 loop
       enb2_i   <= '1';
       wait until rising_edge(clkb_i);
     end loop;
     enb2_i   <= '0';
+    wait until fifo_status_b_o.steady = '1';
+    wait until rising_edge(clkb_i);
+    while true loop
+      if fifo_status_b_o.steady = '1' then
+        enb2_i <= '1';
+      elsif fifo_status_b_o.gofull = '1' then
+        enb2_i <= '1';
+      elsif fifo_status_b_o.full = '1' then
+        enb2_i <= '1';
+      else
+        enb2_i <= '0';
+      end if;
+      wait until rising_edge(clkb_i);
+    end loop;
     wait;
   end process;
 
@@ -109,7 +147,7 @@ begin
     stdfifo2ck_i : stdfifo2ck
     generic map (
       ram_type  => blockram,
-      fifo_size => fifo_size,
+      fifo_size => 5,
       port_size => port_size
     )
     port map (

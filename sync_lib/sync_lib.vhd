@@ -59,13 +59,12 @@ package sync_lib is
 
   component async_stretch
     port (
-      slowclk_i : in  std_logic;
-      fastclk_i : in  std_logic;
-      din       : in  std_logic;
-      dout      : out std_logic
+      clkin_i  : in  std_logic;
+      clkout_i : in  std_logic;
+      din      : in  std_logic;
+      dout     : out std_logic
     );
   end component async_stretch;
-
 
 end package;
 

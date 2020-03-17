@@ -27,7 +27,6 @@ architecture behavioral of sync_lib_tb is
   signal syncr_s    : std_logic;
   signal stretch_s  : std_logic;
 
-
 begin
 
   rst_i     <= '1',      '0' after 50 ns;
@@ -100,8 +99,8 @@ begin
 
     async_stretch_i : async_stretch
     port map (
-      slowclk_i => slowclk_i,
-      fastclk_i => mclk_i,
+      clkin_i   => slowclk_i,
+      clkout_i  => mclk_i,
       din       => det_up_s,
       dout      => stretch_s
     );

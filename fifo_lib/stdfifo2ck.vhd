@@ -36,28 +36,47 @@ end stdfifo2ck;
 
 architecture behavioral of stdfifo2ck is
 
-  constant debug : boolean := false;
+  constant debug        : boolean := false;
 
-  signal input_fifo_mq      : fifo_state_t := steady_st;
-  signal output_fifo_mq     : fifo_state_t := steady_st;
+  signal input_fifo_mq  : fifo_state_t := steady_st;
+  signal output_fifo_mq : fifo_state_t := steady_st;
 
-  signal addri_cnt     : gray_vector(fifo_size-1 downto 0);
-  signal addro_cnt     : gray_vector(fifo_size-1 downto 0);
-  signal addro_s       : gray_vector(fifo_size-1 downto 0);
+  signal addri_cnt      : gray_vector(fifo_size-1 downto 0);
+  signal addro_cnt      : gray_vector(fifo_size-1 downto 0);
 
-  signal addri_cnt_s   : gray_vector(fifo_size-1 downto 0);
-  signal addro_cnt_s   : gray_vector(fifo_size-1 downto 0);
+  signal addri_cnt_s    : gray_vector(fifo_size-1 downto 0);
+  signal addro_cnt_s    : gray_vector(fifo_size-1 downto 0);
 
-  signal enb_s         : std_logic;
-  signal enb_i_s       : std_logic;
-  signal ena_i_s       : std_logic;
+  signal ena_i_s        : std_logic;
+  signal ena_sync_s     : std_logic;
+  signal ena_up_s       : std_logic;
 
-  signal underflow_s   : std_logic;
-  signal overflow_s    : std_logic;
+  signal enb_i_s        : std_logic;
+  signal enb_sync_s     : std_logic;
+  signal enb_up_s       : std_logic;
+
+  signal underflow_s    : std_logic;
+  signal overflow_s     : std_logic;
 
 begin
 
   --Input
+  enb_st_u : async_stretch
+  port map (
+    clkin_i  => clkb_i,
+    clkout_i => clka_i,
+    din      => enb_i,
+    dout     => enb_sync_s
+  );
+
+  enb_det_u : det_up
+    port map (
+      mclk_i => clkb_i,
+      rst_i  => '0',
+      din    => enb_sync_s,
+      dout   => enb_up_s
+    );
+
   ena_i_s <= '0' when input_fifo_mq = full_st else
              '0' when input_fifo_mq = overflow_st else
              ena_i;
@@ -75,14 +94,34 @@ begin
       end if;
       addri_v       := to_std_logic_vector(addri_cnt);
       addro_v       := to_std_logic_vector(addro_cnt_s);
-      input_fifo_mq <= async_state(ena_i,'0',addri_v,addro_v,input_fifo_mq);
+      input_fifo_mq <= async_state(ena_i,enb_up_s,addri_v,addro_v,input_fifo_mq);
     end if;
   end process;
 
   --output
-  enb_i_s <= '0' when output_fifo_mq = empty_st else
-             '0' when output_fifo_mq = underflow_st else
+  --fall through: we need to get first data as soon as we have it.
+  ena_st_u : async_stretch
+  port map (
+    clkin_i  => clka_i,
+    clkout_i => clkb_i,
+    din      => ena_i,
+    dout     => ena_sync_s
+  );
+
+  ena_det_u : det_up
+    port map (
+      mclk_i => clkb_i,
+      rst_i  => '0',
+      din    => ena_sync_s,
+      dout   => ena_up_s
+    );
+
+  enb_i_s <= '0'      when output_fifo_mq = underflow_st else
+             '1'      when output_fifo_mq = f_empty_st   else
+             '0'      when output_fifo_mq = t_empty_st   else
+             '0'      when output_fifo_mq = empty_st     else
              enb_i;
+
   output_p : process(clkb_i, rstb_i)
     variable addri_v : std_logic_vector(addri_cnt'range);
     variable addro_v : std_logic_vector(addro_cnt'range);
@@ -96,7 +135,7 @@ begin
       end if;
       addri_v := to_std_logic_vector(addri_cnt_s);
       addro_v := to_std_logic_vector(addro_cnt);
-      output_fifo_mq <= async_state('0',enb_i,addri_v,addro_v,output_fifo_mq);
+      output_fifo_mq <= async_state(ena_up_s,enb_i,addri_v,addro_v,output_fifo_mq);
     end if;
   end process;
 
@@ -127,12 +166,6 @@ begin
 
   end generate;
 
-  --fallthrough
-  addro_s <= addro_cnt  when output_fifo_mq = empty_st else
-             addro_cnt + 1;
-  enb_s   <= '1'    when output_fifo_mq = empty_st else
-             enb_i;
-
   dp_ram_i : dp_ram
     generic map (
       ram_type  => fifo_type_dec(ram_type),
@@ -146,53 +179,20 @@ begin
       rstb_i  => rstb_i,
       addra_i => to_std_logic_vector(addri_cnt),
       dataa_i => dataa_i,
-      addrb_i => to_std_logic_vector(addro_s),
+      addrb_i => to_std_logic_vector(addro_cnt),
       datab_o => datab_o,
-      ena_i   => ena_i,
-      wea_i   => ena_i,
-      enb_i   => enb_i
+      ena_i   => '1',
+      wea_i   => ena_i_s,
+      enb_i   => enb_i_s
     );
 
-    overflow_s                <= '1' when input_fifo_mq = overflow_st  else '0';
-    fifo_status_a_o.overflow  <= overflow_s;
-    fifo_status_a_o.full      <= '1' when input_fifo_mq = full_st      else '0';
-    fifo_status_a_o.gofull    <= '1' when input_fifo_mq = gofull_st    else '0';
-    fifo_status_a_o.steady    <= '1' when input_fifo_mq = steady_st    else '0';
-    fifo_status_a_o.goempty   <= '1' when input_fifo_mq = goempty_st   else '0';
-    fifo_status_a_o.empty     <= '1' when input_fifo_mq = empty_st     else '0';
-    sync_underflow : sync_r
-      generic map (
-        stages => 1
-      )
-      port map (
-        mclk_i => clka_i,
-        rst_i  => '0',
-        din    => underflow_s,
-        dout   => fifo_status_a_o.underflow
-      );
+    fifo_status_a_o <= fifo_status_f(input_fifo_mq);
+    fifo_status_b_o <= fifo_status_f(output_fifo_mq);
 
-    fifo_status_b_o.full      <= '1' when output_fifo_mq = full_st      else '0';
-    fifo_status_b_o.gofull    <= '1' when output_fifo_mq = gofull_st    else '0';
-    fifo_status_b_o.steady    <= '1' when output_fifo_mq = steady_st    else '0';
-    fifo_status_b_o.goempty   <= '1' when output_fifo_mq = goempty_st   else '0';
-    fifo_status_b_o.empty     <= '1' when output_fifo_mq = empty_st     else '0';
-    underflow_s               <= '1' when output_fifo_mq = underflow_st else '0';
-    fifo_status_b_o.underflow <= underflow_s;
-    sync_overflow : sync_r
-      generic map (
-        stages => 1
-      )
-      port map (
-        mclk_i => clkb_i,
-        rst_i  => '0',
-        din    => overflow_s,
-        dout   => fifo_status_b_o.overflow
-      );
-
-      debug_gen : if debug generate
-        signal delta_s : unsigned(addri_cnt'range);
-      begin
-        delta_s <= to_unsigned(addri_cnt - addro_cnt);
-      end generate;
+  debug_gen : if debug generate
+    signal delta_s : unsigned(addri_cnt'range);
+  begin
+    delta_s <= to_unsigned(addri_cnt - addro_cnt);
+  end generate;
 
 end behavioral;
