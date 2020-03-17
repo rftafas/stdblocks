@@ -45,7 +45,7 @@ begin
   clk_i <= not clk_i after 10 ns;
 
   rstb_i  <= '1', '0' after 120 ns;
-  clkb_i <= not clkb_i after 30 ns;
+  clkb_i <= not clkb_i after 20 ns;
 
 
   process
@@ -60,7 +60,7 @@ begin
     report "starting write test" severity note;
     for j in 3 downto 0 loop
       ena_i   <= '1';
-      dataa_i <= to_std_logic_vector(j,dataa_i'length);
+      dataa_i <= to_std_logic_vector(j+5,dataa_i'length);
       wait until rising_edge(clk_i);
     end loop;
     ena_i   <= '0';
@@ -74,7 +74,7 @@ begin
       wait until rising_edge(clk_i);
     end loop;
     enb_i   <= '0';
-    wait for 100 ns;
+    wait for 500 ns;
     wait until rising_edge(clk_i);
     report "starting write forever" severity note;
     dataa_i   <= to_std_logic_vector(counter_v,dataa_i'length);
@@ -111,13 +111,15 @@ begin
     wait until rising_edge(clkb_i);
     while true loop
       if fifo_status_b_o.steady = '1' then
-        enb2_i <= not enb2_i;
+        enb2_i <= '1';
+      elsif fifo_status_b_o.gofull = '1' then
+        enb2_i <= '1';
       elsif fifo_status_b_o.full = '1' then
         enb2_i <= '1';
       else
         enb2_i <= '0';
       end if;
-      wait until rising_edge(clk_i);
+      wait until rising_edge(clkb_i);
     end loop;
     wait;
   end process;
@@ -143,7 +145,7 @@ begin
     stdfifo2ck_i : stdfifo2ck
     generic map (
       ram_type  => blockram,
-      fifo_size => fifo_size,
+      fifo_size => 5,
       port_size => port_size
     )
     port map (

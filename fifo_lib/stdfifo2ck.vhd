@@ -36,7 +36,7 @@ end stdfifo2ck;
 
 architecture behavioral of stdfifo2ck is
 
-  constant debug        : boolean := true;
+  constant debug        : boolean := false;
 
   signal input_fifo_mq  : fifo_state_t := steady_st;
   signal output_fifo_mq : fifo_state_t := steady_st;
@@ -94,7 +94,7 @@ begin
       end if;
       addri_v       := to_std_logic_vector(addri_cnt);
       addro_v       := to_std_logic_vector(addro_cnt_s);
-      input_fifo_mq <= sync_state(ena_i,enb_up_s,addri_v,addro_v,input_fifo_mq);
+      input_fifo_mq <= async_state(ena_i,enb_up_s,addri_v,addro_v,input_fifo_mq);
     end if;
   end process;
 
@@ -134,7 +134,7 @@ begin
       end if;
       addri_v := to_std_logic_vector(addri_cnt_s);
       addro_v := to_std_logic_vector(addro_cnt);
-      output_fifo_mq <= sync_state(ena_up_s,enb_i,addri_v,addro_v,output_fifo_mq);
+      output_fifo_mq <= async_state(ena_up_s,enb_i,addri_v,addro_v,output_fifo_mq);
     end if;
   end process;
 
@@ -182,39 +182,16 @@ begin
       datab_o => datab_o,
       ena_i   => ena_i,
       wea_i   => ena_i,
-      enb_i   => enb_i
+      enb_i   => enb_i_s
     );
 
     fifo_status_a_o <= fifo_status_f(input_fifo_mq);
-
-    sync_underflow : sync_r
-      generic map (
-        stages => 1
-      )
-      port map (
-        mclk_i => clka_i,
-        rst_i  => '0',
-        din    => underflow_s,
-        dout   => fifo_status_a_o.underflow
-      );
-
     fifo_status_b_o <= fifo_status_f(output_fifo_mq);
 
-    sync_overflow : sync_r
-      generic map (
-        stages => 1
-      )
-      port map (
-        mclk_i => clkb_i,
-        rst_i  => '0',
-        din    => overflow_s,
-        dout   => fifo_status_b_o.overflow
-      );
-
-      debug_gen : if debug generate
-        signal delta_s : unsigned(addri_cnt'range);
-      begin
-        delta_s <= to_unsigned(addri_cnt - addro_cnt);
-      end generate;
+  debug_gen : if debug generate
+    signal delta_s : unsigned(addri_cnt'range);
+  begin
+    delta_s <= to_unsigned(addri_cnt - addro_cnt);
+  end generate;
 
 end behavioral;

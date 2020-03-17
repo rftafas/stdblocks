@@ -228,32 +228,35 @@ package body fifo_lib is
       when empty_st =>
         if oen = '1' then
           tmp := underflow_st;
-        elsif delta = 1 then
+        elsif ien = '1' then
+          tmp:= n_empty_st;
+        end if;
+
+      when n_empty_st =>
+        if delta = 0 and oen = '1' then
+          tmp := empty_st;
+        elsif delta > 1 then
           tmp:= goempty_st;
         end if;
 
       when goempty_st =>
         if delta = 1 and oen = '1' then
-          tmp :=  empty_st;
-        elsif delta = 0 then
-          tmp :=  empty_st;
-        elsif delta = fifo_length/4 then
+          tmp := n_empty_st;
+        elsif delta >= fifo_length/4 then
           tmp:= steady_st;
         end if;
 
       when steady_st =>
-        if delta = fifo_length/4-1 then
+        if delta    <   fifo_length/4 then
           tmp := goempty_st;
-        elsif delta = 3*fifo_length/4 then
+        elsif delta >= 3*fifo_length/4 then
           tmp:= gofull_st;
         end if;
 
       when gofull_st =>
         if delta = fifo_length-1 and ien = '1' then
           tmp:= full_st;
-        elsif delta = 0 then --estourou o contador.
-            tmp:= full_st;
-        elsif delta = 3*fifo_length/4-1 then
+        elsif delta < 3*fifo_length/4 then
           tmp :=  steady_st;
         end if;
 

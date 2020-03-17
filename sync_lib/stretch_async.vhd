@@ -31,10 +31,10 @@ begin
   begin
     if rising_edge(clkin_i) then
       reg_back_s <= reg_back_s(0) & reg_out_s(1);
-      if din = '1' then
-        reg_forward_s <= '1';
-      elsif reg_back_s(1) = '1' then
+      if reg_back_s(1) = '1' then
         reg_forward_s <= '0';
+      elsif din = '1' then
+        reg_forward_s <= '1';
       end if;
     end if;
   end process;
