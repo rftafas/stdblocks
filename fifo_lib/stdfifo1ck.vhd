@@ -45,7 +45,7 @@ architecture behavioral of stdfifo1ck is
 begin
 
   --Input
-  ena_i_s <= '0' when fifo_mq = full_st else
+  ena_i_s <= '0' when fifo_mq = full_st     else
              '0' when fifo_mq = overflow_st else
              ena_i;
 
