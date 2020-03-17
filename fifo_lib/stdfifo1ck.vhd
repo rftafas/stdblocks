@@ -107,15 +107,7 @@ begin
       enb_i   => enb_i_s
     );
 
-  fifo_status_o.overflow  <= '1' when fifo_mq = overflow_st  else '0';
-  fifo_status_o.full      <= '1' when fifo_mq = full_st      else '0';
-  fifo_status_o.gofull    <= '1' when fifo_mq = gofull_st    else '0';
-  fifo_status_o.steady    <= '1' when fifo_mq = steady_st    else '0';
-  fifo_status_o.goempty   <= '1' when fifo_mq = goempty_st   else
-                             '1' when fifo_mq = n_empty_st   else
-                             '0';
-  fifo_status_o.empty     <= '1' when fifo_mq = empty_st     else '0';
-  fifo_status_o.underflow <= '1' when fifo_mq = underflow_st else '0';
+  fifo_status_o  <= fifo_status_f(fifo_mq);
 
   debug_gen : if debug generate
     signal delta_s : std_logic_vector(addri_cnt'range);

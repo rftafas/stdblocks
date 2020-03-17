@@ -99,7 +99,7 @@ begin
   begin
     enb2_i   <= '0';
     wait until rstb_i = '0';
-    wait until write_ok;
+    wait until fifo_status_b_o.empty = '0';
     wait until rising_edge(clkb_i);
     --read
     for j in 0 to 3 loop

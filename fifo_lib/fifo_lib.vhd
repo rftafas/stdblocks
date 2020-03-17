@@ -31,6 +31,8 @@ package fifo_lib is
     ien : std_logic; oen : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
   ) return fifo_state_t;
 
+  function fifo_status_f(mq_input : fifo_state_t) return fifo_status;
+
   component stdfifo2ck
     generic (
       ram_type  : fifo_t := blockram;
@@ -273,5 +275,33 @@ package body fifo_lib is
     end case;
     return tmp;
 	end async_state;
+
+  function fifo_status_f(mq_input : fifo_state_t) return fifo_status is
+    variable tmp : fifo_status;
+  begin
+    tmp.overflow  := '0';
+    tmp.full      := '0';
+    tmp.gofull    := '0';
+    tmp.steady    := '0';
+    tmp.empty     := '0';
+    tmp.underflow := '0';
+    tmp.goempty   := '0';
+    if mq_input = overflow_st then
+      tmp.overflow  := '1';
+    elsif mq_input = full_st then
+      tmp.full      := '1';
+    elsif mq_input = gofull_st then
+      tmp.gofull    := '1';
+    elsif mq_input = steady_st then
+      tmp.steady    := '1';
+    elsif mq_input = empty_st then
+      tmp.empty     := '1';
+    elsif mq_input = underflow_st then
+      tmp.underflow := '1';
+    else
+      tmp.goempty   := '1';
+    end if;
+    return tmp;
+  end fifo_status_f;
 
 end package body;

@@ -185,13 +185,7 @@ begin
       enb_i   => enb_i
     );
 
-    overflow_s                <= '1' when input_fifo_mq = overflow_st  else '0';
-    fifo_status_a_o.overflow  <= overflow_s;
-    fifo_status_a_o.full      <= '1' when input_fifo_mq = full_st      else '0';
-    fifo_status_a_o.gofull    <= '1' when input_fifo_mq = gofull_st    else '0';
-    fifo_status_a_o.steady    <= '1' when input_fifo_mq = steady_st    else '0';
-    fifo_status_a_o.goempty   <= '1' when input_fifo_mq = goempty_st   else '0';
-    fifo_status_a_o.empty     <= '1' when input_fifo_mq = empty_st     else '0';
+    fifo_status_a_o <= fifo_status_f(input_fifo_mq);
 
     sync_underflow : sync_r
       generic map (
@@ -204,13 +198,7 @@ begin
         dout   => fifo_status_a_o.underflow
       );
 
-    fifo_status_b_o.full      <= '1' when output_fifo_mq = full_st      else '0';
-    fifo_status_b_o.gofull    <= '1' when output_fifo_mq = gofull_st    else '0';
-    fifo_status_b_o.steady    <= '1' when output_fifo_mq = steady_st    else '0';
-    fifo_status_b_o.goempty   <= '1' when output_fifo_mq = goempty_st   else '0';
-    fifo_status_b_o.empty     <= '1' when output_fifo_mq = empty_st     else '0';
-    underflow_s               <= '1' when output_fifo_mq = underflow_st else '0';
-    fifo_status_b_o.underflow <= underflow_s;
+    fifo_status_b_o <= fifo_status_f(output_fifo_mq);
 
     sync_overflow : sync_r
       generic map (
