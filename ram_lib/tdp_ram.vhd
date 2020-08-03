@@ -1,4 +1,9 @@
 ----------------------------------------------------------------------------------
+-- ram_lib  by Ricardo F Tafas Jr
+-- This is an ancient library I've been using since my earlier FPGA days.
+-- Code is provided AS IS.
+-- Submit any suggestions to GITHUB ticket system.
+----------------------------------------------------------------------------------
 -- TDP_RAM, true dual port memory.
 ----------------------------------------------------------------------------------
 library ieee;

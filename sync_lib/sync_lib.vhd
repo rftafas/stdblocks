@@ -44,7 +44,6 @@ package sync_lib is
     );
   end component det_updown;
 
-
   component pulse_align
     generic (
       port_size : integer := 8
@@ -57,14 +56,33 @@ package sync_lib is
     );
   end component pulse_align;
 
-  component async_stretch
+  component stretch_async
     port (
       clkin_i  : in  std_logic;
       clkout_i : in  std_logic;
       din      : in  std_logic;
       dout     : out std_logic
     );
-  end component async_stretch;
+  end component stretch_async;
+
+  component stretch_sync is
+      port (
+        rst_i  : in  std_logic;
+        mclk_i : in  std_logic;
+        da_i   : in  std_logic;
+        db_i   : in  std_logic;
+        dout_o : out std_logic
+      );
+  end component;
+
+  component debounce is
+    port (
+      rst_i  : in  std_logic;
+      mclk_i : in  std_logic;
+      din    : in  std_logic;
+      dout   : out std_logic
+    );
+  end component;
 
 end package;
 

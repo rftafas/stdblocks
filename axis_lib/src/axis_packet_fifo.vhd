@@ -44,7 +44,6 @@ entity axis_packet_fifo is
       m_tvalid_o   : out std_logic;
       m_tlast_o    : out std_logic;
 
-
       fifo_status_a_o : out fifo_status;
       fifo_status_b_o : out fifo_status
     );
@@ -53,7 +52,7 @@ end axis_packet_fifo;
 architecture behavioral of axis_packet_fifo is
 
   constant input_vector_size : integer := s_tdata_i'length + s_tuser_i'length + s_tdest_i'length;
-  constant fifo_size         : integer := get_data_size (tdata_size,tdest_size,tuser_size,tuser_enable,tdest_enable);
+  constant fifo_size         : integer := get_data_size(tdata_size,tdest_size,tuser_size,tuser_enable,tdest_enable);
 
   signal   fifo_data_i_s  : std_logic_vector(input_vector_size-1 downto 0);
   signal   fifo_data_i_s  : std_logic_vector(input_vector_size-1 downto 0);
@@ -80,8 +79,8 @@ begin
   m_tvalid_o <= not fifo_status_b_s.empty;
   enb_i_s    <= not fifo_status_b_s.empty and m_tready_i;
 
-  fifo_status_a_o => fifo_status_a_s;
-  fifo_status_b_o => fifo_status_b_s;
+  fifo_status_a_o <= fifo_status_a_s;
+  fifo_status_b_o <= fifo_status_b_s;
 
   --this is not that smart fifo. it counts number of TLAST in to announce how many packats
   --it contains.

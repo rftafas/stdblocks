@@ -1,6 +1,8 @@
 ----------------------------------------------------------------------------------
--- SPI-AXI-Master  by Ricardo F Tafas Jr
--- For this IP, CPOL = 0 and CPHA = 0. SPI Master must be configured accordingly.
+-- fifo_lib  by Ricardo F Tafas Jr
+-- This is an ancient library I've been using since my earlier FPGA days.
+-- Code is provided AS IS.
+-- Submit any suggestions to GITHUB ticket system.
 ----------------------------------------------------------------------------------
 library ieee;
     use ieee.std_logic_1164.all;

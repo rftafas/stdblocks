@@ -7,16 +7,17 @@
 library ieee;
     use ieee.std_logic_1164.all;
 
-entity stretch_async is
+entity stretch_sync is
     port (
-        clkin_i    : in  std_logic;
-        clkout_i   : in  std_logic;
-        din        : in  std_logic;
-        dout       : out std_logic
+      rst_i  : in  std_logic;
+      mclk_i : in  std_logic;
+      da_i   : in  std_logic;
+      db_i   : in  std_logic;
+      dout_o : out std_logic
     );
-end stretch_async;
+end stretch_sync;
 
-architecture behavioral of stretch_async is
+architecture behavioral of stretch_sync is
 
   --for the future: include attributes for false path.
 
@@ -27,26 +28,30 @@ architecture behavioral of stretch_async is
 
 begin
 
-  process(clkin_i)
+  process(mclk_i)
   begin
-    if rising_edge(clkin_i) then
-      reg_back_s <= reg_back_s(0) & reg_out_s(1);
-      if reg_back_s(1) = '1' then
-        reg_forward_s <= '0';
-      elsif din = '1' then
-        reg_forward_s <= '1';
+    if rst_i = '1' then
+      da_tmp := '0';
+      db_tmp := '0';
+      dout_o <= '0';
+    elsif rising_edge(mclk_i) then
+      dout_o <= '0';
+
+      if da_i = '1' then
+        da_tmp := '1';
       end if;
+
+      if db_i = '1' then
+        db_tmp := '1';
+      end if;
+
+      if da_tmp = '1' and db_tmp = '1' thelen
+        da_tmp := '0';
+        db_tmp := '0';
+        dout_o <= '1';
+      end if;
+
     end if;
   end process;
-
-  process(clkout_i)
-    variable lock_v : boolean := false;
-  begin
-    if rising_edge(clkout_i) then
-      reg_out_s  <= reg_out_s(1 downto 0) & reg_forward_s;
-    end if;
-  end process;
-
-  dout <= reg_out_s(2) and not reg_out_s(1);
 
 end behavioral;

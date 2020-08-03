@@ -161,7 +161,7 @@ begin
 
     count_sync_s(0) <= s_tlast_i and ena_i_s;
 
-    async_stretch_i : async_stretch
+    async_stretch_i : stretch_async
     port map (
       clkin_i  => clka_i,
       clkout_i => clkb_i,

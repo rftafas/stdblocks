@@ -1,6 +1,8 @@
 ----------------------------------------------------------------------------------
--- SPI-AXI-Master  by Ricardo F Tafas Jr
--- For this IP, CPOL = 0 and CPHA = 0. SPI Master must be configured accordingly.
+-- ram_lib  by Ricardo F Tafas Jr
+-- This is an ancient library I've been using since my earlier FPGA days.
+-- Code is provided AS IS.
+-- Submit any suggestions to GITHUB ticket system.
 ----------------------------------------------------------------------------------
 library ieee;
     use ieee.std_logic_1164.all;
@@ -107,7 +109,7 @@ begin
 
   elsif ram_type = distributed generate
 
-    ffin_p : process(clka_i, rsta_i)
+    lutin_p : process(clka_i, rsta_i)
     begin
       if rsta_i = '1' then
         dataa_o    <= (others=>'0');
@@ -121,7 +123,7 @@ begin
       end if;
     end process;
 
-    ffout_p : process(clkb_i, rstb_i)
+    lutout_p : process(clkb_i, rstb_i)
     begin
       if rstb_i = '1' then
         datab_o <= (others=>'0');

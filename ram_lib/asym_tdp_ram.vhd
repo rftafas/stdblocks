@@ -1,7 +1,13 @@
+----------------------------------------------------------------------------------
+-- ram_lib  by Ricardo F Tafas Jr
+-- This is an ancient library I've been using since my earlier FPGA days.
+-- Code is provided AS IS.
+-- Submit any suggestions to GITHUB ticket system.
+----------------------------------------------------------------------------------
 -- asymmetric port RAM
 -- True Dual port read first
 -- asym_ram_tdp_read_first_first.vhd
-
+----------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
