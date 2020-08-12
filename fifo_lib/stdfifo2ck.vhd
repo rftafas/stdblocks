@@ -63,7 +63,7 @@ architecture behavioral of stdfifo2ck is
 begin
 
   --Input
-  enb_st_u : async_stretch
+  enb_st_u : stretch_async
   port map (
     clkin_i  => clkb_i,
     clkout_i => clka_i,
