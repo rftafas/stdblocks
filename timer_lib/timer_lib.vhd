@@ -7,9 +7,11 @@ package timer_lib is
 	function nco_size (Fref : real; Res  : real) return integer;
 	function nvalue   (Fref : real; Fout : real) return unsigned;
 
+	function closest_period (Tout : time, Fref : frequency, m : integer) return integer;
+
 	component nco is
 	    generic (
-	      Fref_hz        : real    := 100000000.0000;
+	      Fref_hz         : real    := 100000000.0000;
 	      Fout_hz         : real    :=   1000000.0000;
 	      Resolution_hz   : real    :=        20.0000;
 	      use_scaler      : boolean :=          false;
@@ -28,6 +30,29 @@ end timer_lib;
 
 --a arquitetura
 package body timer_lib is
+
+	function q_calc (Tout : real, Fref : real, m : integer) return integer is
+		variable tmp : real;
+	begin
+		tmp := floor(log2(base_tmp*Fref)/log2(m_v));
+		return to_integer(tmp);
+	end q_calc;
+
+	function t1_calc (m : integer, q : integer, Fref : real ) return real is
+		variable tmp : real;
+	begin
+		tmp := to_real(m**q)/Fref;
+		return tmp;
+	end t1_calc;
+
+	function y_calc (Tout : real, Fref : real, T1 : real, X1 : integer) return integer is
+		variable y : integer;
+		variable e : real;
+	begin
+		e = Tout - T1*real(X1);
+		y = to_integer(e*fref);
+		return y;
+	end y_calc;
 
   function nco_size (Fref : real; res : real) return integer is
 		variable tmp  : integer;
