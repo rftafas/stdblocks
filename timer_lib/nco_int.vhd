@@ -7,10 +7,8 @@
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
-  library stdblocks;
-    use stdblocks.timer_lib.all;
 
-entity nco is
+entity nco_int is
     generic (
       Fref_hz        : real    := 100000000.0000;
       Fout_hz         : real    :=   1000000.0000;
@@ -25,7 +23,7 @@ entity nco is
       n_value_i : in  std_logic_vector;
       clkout_o  : out std_logic
     );
-end nco;
+end nco_int;
 
 architecture behavioral of debounce is
 
@@ -38,34 +36,20 @@ architecture behavioral of debounce is
 
 begin
 
-  nvalue_gen : if adjustable_freq generate
-    nvalue_p : process(mclk_i, rst_i)
-    begin
-      if rst_i = '1' then
-        n_value_s  <= (others=>'0');
-      elsif rising_edge(mclk_i) then
-        n_value_s <= to_unsigned(n_value_i);
-      end if;
-    end process;
-
-  else generate
-    n_value_s <= n_value_c;
-
-  end generate;
-
-  scaler_s <= scaler_i when use_scaler else '1';
-
-  nco_p : process(mclk_i, rst_i)
-  begin
-    if rst_i = '1' then
-      nco_s  <= (others=>'0');
-    elsif rising_edge(mclk_i) then
-      if scaler_s = '1' then
-        nco_s <= nco_s + n_value_s;
-      end if;
-    end if;
-   end process;
-
-   clkout_o <= nco_s(nco_s'high);
+  nco_u : nco_int
+      generic map (
+        Fref_hz         => Fref_hz,
+        Fout_hz         => Fout_hz,
+        Resolution_hz   => Resolution_hz,
+        use_scaler      => use_scaler,
+        adjustable_freq => adjustable_freq
+      );
+      port map (
+        rst_i     => rst_i,
+        mclk_i    => mclk_i,
+        scaler_i  => scaler_i,
+        n_value_i => n_value_i,
+        clkout_o  => clkout_o
+      );
 
 end behavioral;

@@ -3,17 +3,21 @@
 -- Code is provided AS IS.
 -- Submit any suggestions to GITHUB ticket system.
 ----------------------------------------------------------------------------------
+-- ADPLL will filter any input clock and get it back to 50% duty cycle with error
+-- MAX at +-1 reference clock cycle.
+----------------------------------------------------------------------------------
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
 library stdblocks;
-    use stdblocks.sync_lib.all;
+  use stdblocks.sync_lib.all;
+  use stdblocks.timer_lib.all;
 
 entity adpll is
   generic (
-    Fref_hz        : real    := 100000000.0000;
-    Fout_hz         : real    :=   1000000.0000;
-    Resolution_hz   : real    :=        20.0000;
+    Fref_hz       : real := 100000000.0000;
+    Fout_hz       : real :=   1000000.0000;
+    Resolution_hz : real :=        20.0000
   );
   port (
     rst_i    : in  std_logic;

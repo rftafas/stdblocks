@@ -6,6 +6,8 @@
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
+  library stdblocks;
+    use stdblocks.timer_lib.all;
 
 entity precise_long_counter is
   generic (

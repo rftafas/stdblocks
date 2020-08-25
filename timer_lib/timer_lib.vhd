@@ -26,6 +26,74 @@ package timer_lib is
 	    );
 	end component;
 
+	component pwm is
+	  generic (
+	    Fref_hz  : real    := 100000000.0000;
+	    Fout_hz  : real    :=   1000000.0000;
+	    PWM_size : integer :=             16
+	  );
+	  port (
+	    rst_i       : in  std_logic;
+	    mclk_i      : in  std_logic;
+	    threshold_i : in  std_logic_vector(PWM_size-1 ownto 0);
+	    pwm_o       : out std_logic
+	  );
+	end component;
+
+	component long_counter is
+	  generic (
+	    Fref_hz : frequency := 100 MHz;
+	    Tout_s  : time      :=  10 sec;
+	    sr_size : integer   :=  32
+	  );
+	  port (
+	    rst_i       : in  std_logic;
+	    mclk_i      : in  std_logic;
+	    enable_i    : in  std_logic;
+	    enable_o    : out std_logic
+	  );
+	end component;
+
+	component long_counter_cell is
+	  generic (
+	    sr_size : integer   :=  32
+	  );
+	  port (
+	    rst_i       : in  std_logic;
+	    mclk_i      : in  std_logic;
+	    enable_i    : in  std_logic;
+	    enable_o    : out std_logic
+	  );
+	end component;
+
+	component precise_long_counter is
+	  generic (
+	    Fref_hz : frequency := 100 MHz;
+	    Tout_s  : time      :=  10 sec;
+	    sr_size : integer   :=  32
+	  );
+	  port (
+	    rst_i       : in  std_logic;
+	    mclk_i      : in  std_logic;
+	    enable_i    : in  std_logic;
+	    enable_o    : out std_logic
+	  );
+	end component;
+
+	component adpll is
+	  generic (
+	    Fref_hz       : real := 100000000.0000;
+	    Fout_hz       : real :=   1000000.0000;
+	    Resolution_hz : real :=        20.0000
+	  );
+	  port (
+	    rst_i    : in  std_logic;
+	    mclk_i   : in  std_logic;
+	    clkin_i  : in  std_logic;
+	    clkout_o : out std_logic
+	  );
+	end component;
+
 end timer_lib;
 
 --a arquitetura
@@ -38,19 +106,18 @@ package body timer_lib is
 		return to_integer(tmp);
 	end q_calc;
 
-	function t1_calc (m : integer, q : integer, Fref : real ) return real is
+	function x1_calc (Tout : real, Fref : real, m : integer, q : integer) return integer is
 		variable tmp : real;
 	begin
-		tmp := to_real(m**q)/Fref;
-		return tmp;
-	end t1_calc;
+		tmp := tout*Fref/real(m**q);
+		return to_integer(tmp);
+	end x1_calc;
 
-	function y_calc (Tout : real, Fref : real, T1 : real, X1 : integer) return integer is
+	function y_calc (Tout : real, Fref : real, X1 : integer, m : integer, q : integer) return integer is
 		variable y : integer;
 		variable e : real;
 	begin
-		e = Tout - T1*real(X1);
-		y = to_integer(e*fref);
+	  y = to_integer(Tout * fref) - (m**q * X1);
 		return y;
 	end y_calc;
 

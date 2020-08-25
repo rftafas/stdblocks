@@ -66,7 +66,7 @@ begin
     when 1 =>
       -- type 1:
       -- very hard round robin. it only shifts IF current channel acknowledges it had its chance.
-      -- Provided everychannel has data to send and is a fair player, it grants a fair share.
+      -- Provided everychannel has data to send and/or is a fair player, it grants a fair share.
       -- it will get stuck if a channel gets no data. so care must be taken.
       --
       -- for those questioning themselves why is it worth to risk starvation, it is very good when
