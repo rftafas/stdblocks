@@ -73,15 +73,22 @@ begin
 
     counter_p : process(all)
     begin
-      if rising_edge(mclk_i) then
+      if rst_i = '1' then
+        counter_s  <= 0;
+        counter_en <= '0';
+        enable_o   <= '0';
+      elsif rising_edge(mclk_i) then
         if start_en = '1' then
           counter_s  <= 0;
           counter_en <= '1';
+          enable_o   <= '0';
         elsif counter_s = cnt_limit-1 then
           counter_en <= '0';
           counter_s  <= 0;
+          enable_o   <= '1';
         elsif counter_en = '1' then
           counter_s  <= counter_s  + 1;
+          enable_o   <= '0';
         end if;
       end if;
     end process;
