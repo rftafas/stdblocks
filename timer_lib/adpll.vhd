@@ -29,7 +29,7 @@ end adpll;
 
 architecture behavioral of adpll is
 
-  constant nco_size_c   : integer := nco_size(Fref_hz,Resolution_hz)
+  constant nco_size_c   : integer := nco_size(Fref_hz,Resolution_hz);
 
   signal clkout_s  : std_logic;
   signal clkout_en : std_logic;

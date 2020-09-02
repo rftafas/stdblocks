@@ -6,8 +6,9 @@
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
-  library stdblocks;
-    use stdblocks.timer_lib.all;
+	use IEEE.math_real.all;
+library stdblocks;
+  use stdblocks.timer_lib.all;
 
 entity pwm is
   generic (

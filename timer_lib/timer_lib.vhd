@@ -1,7 +1,8 @@
 library IEEE;
 	use IEEE.std_logic_1164.all;
 	use IEEE.numeric_std.all;
-
+	use IEEE.math_real.all;
+	
 package timer_lib is
 
 	function nco_size (Fref : real; Res  : real) return integer;
