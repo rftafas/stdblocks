@@ -2,21 +2,40 @@ library IEEE;
 	use IEEE.std_logic_1164.all;
 	use IEEE.numeric_std.all;
 	use IEEE.math_real.all;
-	
+
 package timer_lib is
 
-	function nco_size (Fref : real; Res  : real) return integer;
-	function nvalue   (Fref : real; Fout : real) return unsigned;
+	type frequency is range 0 to 10000000000
+	units
+		Hz;
+		kHz = 1000.0000 Hz;
+		MHz = 1000.0000 kHz;
+		GHz = 1000.0000 MHz;
+	end units;
 
-	function closest_period (Tout : time, Fref : frequency, m : integer) return integer;
+	function to_real ( input : frequency ) return real;
+	function to_real ( input :      time ) return real;
+
+	function nco_size_calc (
+		res : frequency;
+		Fref : frequency
+	) return integer;
+
+	function increment_value_calc (
+		Fref : frequency;
+		Fout : frequency;
+		size : integer
+	) return integer;
+
+	 function counter_cell_calc (Tout : time, Fref : frequency, cell_size : integer) return integer;
 
 	component nco is
 	    generic (
-	      Fref_hz         : real    := 100000000.0000;
-	      Fout_hz         : real    :=   1000000.0000;
-	      Resolution_hz   : real    :=        20.0000;
-	      use_scaler      : boolean :=          false;
-	      adjustable_freq : boolean :=          false
+	      Fref_hz         : frequency := 100 MHz;
+	      Fout_hz         : frequency :=  10 MHz;
+	      Resolution_hz   : frequency :=  20  Hz;
+	      use_scaler      : boolean   :=   false;
+	      adjustable_freq : boolean   :=   false
 	    );
 	    port (
 	      rst_i     : in  std_logic;
@@ -29,9 +48,9 @@ package timer_lib is
 
 	component pwm is
 	  generic (
-	    Fref_hz  : real    := 100000000.0000;
-	    Fout_hz  : real    :=   1000000.0000;
-	    PWM_size : integer :=             16
+			Fref_hz  : frequency := 100 MHz;
+			Fout_hz  : frequency :=  10 MHz;
+	    PWM_size : integer   :=  16
 	  );
 	  port (
 	    rst_i       : in  std_logic;
@@ -43,7 +62,7 @@ package timer_lib is
 
 	component long_counter is
 	  generic (
-	    Fref_hz : frequency := 100 MHz;
+			Fref_hz  : frequency := 100 MHz;
 	    Tout_s  : time      :=  10 sec;
 	    sr_size : integer   :=  32
 	  );
@@ -100,74 +119,78 @@ end timer_lib;
 --a arquitetura
 package body timer_lib is
 
-	function q_calc (Tout : real, Fref : real, m : integer) return integer is
-		variable tmp : real;
+	function to_real ( input : frequency ) return real is
 	begin
-		tmp := floor(log2(base_tmp*Fref)/log2(m_v));
+		return real(frequency / 1 hz);
+	end to_real;
+
+	function to_real ( input :      time ) return real is
+	begin
+		return real(input / 1 sec);
+	end to_real;
+
+	function nco_size_calc (res : frequency; Fref : frequency) return integer is
+		variable res_tmp  : real;
+		variable fref_tmp : real;
+	begin
+		res_tmp  := to_real(res);
+		fref_tmp := to_real(fref);
+		return integer(ceil(log2(fref_tmp/res_tmp)));
+	end nco_size_calc;
+
+	function increment_value_calc (Fref : frequency; Fout : frequency; size : integer ) return integer is
+		variable fout_tmp : real;
+		variable fref_tmp : real;
+		variable size_tmp : real;
+	begin
+		fout_tmp := to_real(Fout);
+		fref_tmp := to_real(fref);
+		size_tmp := to_real(2**size);
+		return integer(fout_tmp*size_tmp/fref_tmp);
+	end increment_value_calc;
+
+--------------------------------------------------------------------------------------------------------
+-- LONG COUNTER CALCULATIONS
+--------------------------------------------------------------------------------------------------------
+	function timer_valid_check (period : time; Fref : frequency ) return boolean is
+		variable period_tmp    : real;
+		variable fref_tmp      : real;
+	begin
+		period_tmp    := to_real(period);
+		Fref_tmp      := to_real(frequency);
+		tmp           := (Fref_tmp*period_tmp);
+		if tmp >= 1000.0000 then
+			return true;
+		end if;
+		return false;
+	end timer_valid_check;
+
+	function cell_num_calc (period : time; Fref : frequency; cell_size : integer) return integer is
+		variable X_tmp         : real;
+		variable fref_tmp      : real;
+		variable cell_size_tmp : real;
+	begin
+		X_tmp         := log2(to_real(period)*to_real(frequency));
+		cell_size_tmp := real(cell_size);
+		return to_integer(X_tmp/log2(cell_size_tmp));
+	end cell_num_calc;
+
+	function cell_num_calc2 (period : time; Fref : frequency; s_value : real) return integer is
+		variable X_tmp  : real;
+	begin
+		X_tmp := log2(to_real(period)*to_real(frequency));
+		return integer(X_tmp / s_value - 1);
+	end cell_num_calc2;
+
+	function rem_counter_limit (period : time; Fref : frequency; cell_size : integer; cell_num : integer) return real is
+		variable period_tmp    : real;
+		variable fref_tmp      : real;
+		variable tmp           : real;
+	begin
+		period_tmp    := to_real(period);
+		Fref_tmp      := to_real(frequency);
+		tmp           := (period_tmp*fref_tmp) - real(cell_size**(cell_num+1));
 		return to_integer(tmp);
-	end q_calc;
-
-	function x1_calc (Tout : real, Fref : real, m : integer, q : integer) return integer is
-		variable tmp : real;
-	begin
-		tmp := tout*Fref/real(m**q);
-		return to_integer(tmp);
-	end x1_calc;
-
-	function y_calc (Tout : real, Fref : real, X1 : integer, m : integer, q : integer) return integer is
-		variable y : integer;
-		variable e : real;
-	begin
-	  y = to_integer(Tout * fref) - (m**q * X1);
-		return y;
-	end y_calc;
-
-  function nco_size (Fref : real; res : real) return integer is
-		variable tmp  : integer;
-	begin
-		assert Fref > res
-			report "Reference frequency smaller then required precision."
-			severity error;
-
-		tmp := integer(ceil(log2(Fref / res)));
-
-		return tmp;
-	end nco_size;
-
-	function nvalue (Fref : real; Fout : real; NCOsize : integer ) return unsigned is
-		variable tmp  : integer;
-	begin
-		tmp := integer(fout/fref)*(2**NCOsize);
-		return to_unsigned(tmp,NCOsize);
-	end nvalue;
-
-  -- procedure round_robin ( signal req: in std_logic_vector; signal grant: out std_logic_vector; variable index : inout integer_array ) is
-  -- begin
-	--
-  --   assert req'length = grant'length
-  --     severity failure;
-  --     report "Req input and grant inputs must be of same size.";
-	--
-  --   if req_next = '1' then
-  --     req_granted := false;
-  --     grant       <= (others=>'0');
-  --     for j in index'range loop
-  --       if req_granted then
-  --       elsif req(index(j)) = '1' then
-  --         grant(j)    <= '1';
-  --         req_granted := true;
-  --         if j /= 0 then
-  --           index       := index(j-1 downto 0) & j;
-  --         end if;
-  --       end if;
-  --     end loop;
-  --   end if;
-  -- end round_robin;
-
-	procedure nco ( signal input : nco_t ) is
-	begin
-
-	end nco;
-
+	end rem_counter_limit;
 
 end timer_lib;

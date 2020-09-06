@@ -12,8 +12,8 @@ library stdblocks;
 
 entity precise_long_counter is
   generic (
-    Fref_hz : frequency := 100 MHz;
-    Tout_s  : time      :=  10 sec;
+    fref_hz : frequency := 100 MHz;
+    period  : time      :=  10 sec;
     sr_size : integer   :=  32
   );
   port (
@@ -26,13 +26,10 @@ end precise_long_counter;
 
 architecture behavioral of precise_long_counter is
 
-  constant base_tmp  : real    := tout / 16.0000;
-  constant sr_number : integer := q_calc(base_tmp,Fref,m);
-  constant x1_c      : integer := x1_calc(tout,Fref,sr_size,sr_number);
-  constant cnt_limit : integer := y_calc(Tout,Fref,sr_size,sr_number);
-
-  type shift_vector is array (NATURAL RANGE <>) of std_logic_vector(sr_size-1 downto 0);
-  signal timer_sr    : shift_vector(sr_number-1 downto 0) := (others=>(0=>'1', others=>'0'));
+  constant s_value_c  : real    := ceil(log2(real(sr_size)));
+  constant sr_size_c  : integer := 2**integer(s_value_c)
+  constant sr_number  : integer := cell_num_calc2(sub_period,fref,s_value_c);
+  constant cnt_limit  : integer := rem_counter_limit(period,Fref,s_value_c,sr_number);
 
   signal sr_en       : std_logic_vector(sr_number-1 downto 0) := (others=>'0');
   signal out_en      : std_logic_vector(sr_number-1 downto 0) := (others=>'0');
@@ -42,10 +39,14 @@ architecture behavioral of precise_long_counter is
 
 begin
 
+  assert timer_valid_check(period,fref_hz)
+    report "Timer Constraints invalid."
+    severity failure;
+
   for j in 0 to sr_number-1 generate
     cell_u : long_counter_cell
       generic map(
-        sr_size => sr_size
+        sr_size => sr_size_c
       )
       port map (
         rst_i    => rst_i,
@@ -63,7 +64,7 @@ begin
 
   x1_u : long_counter_cell
     generic map(
-      sr_size => x1_c
+      sr_size => sr_size_c
     )
     port map (
       rst_i    => rst_i,

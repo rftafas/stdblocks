@@ -13,7 +13,7 @@ library stdblocks;
 entity long_counter is
   generic (
     Fref_hz : frequency := 100 MHz;
-    Tout_s  : time      :=  10 sec;
+    Period  : time      :=  10 sec;
     sr_size : integer   :=  32
   );
   port (
@@ -26,13 +26,9 @@ end long_counter;
 
 architecture behavioral of long_counter is
 
-  constant sr_number : integer := q_calc(Tout_c,Fref_c,sr_size);
-
-  type shift_vector is array (NATURAL RANGE <>) of std_logic_vector(sr_size-1 downto 0);
-  signal timer_sr : shift_vector(sr_number-1 downto 0) := (others=>(0=>'1', others=>'0'));
-
-  signal sr_en    : std_logic_vector(sr_number-1 downto 0) := (others=>'0');
-  signal out_en   : std_logic_vector(sr_number-1 downto 0) := (others=>'0');
+  constant sr_number : integer := cell_num_calc(Period,Fref_hz,sr_size);
+  signal   sr_en     : std_logic_vector(sr_number-1 downto 0) := (others=>'0');
+  signal   out_en    : std_logic_vector(sr_number-1 downto 0) := (others=>'0');
 
 begin
 

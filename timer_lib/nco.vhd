@@ -13,11 +13,11 @@ library stdblocks;
 
 entity nco is
     generic (
-      Fref_hz        : real    := 100000000.0000;
-      Fout_hz         : real    :=   1000000.0000;
-      Resolution_hz   : real    :=        20.0000;
-      use_scaler      : boolean :=          false;
-      adjustable_freq : boolean :=          false
+      Fref_hz         : frequency := 100 MHz;
+      Fout_hz         : frequency :=  10 MHz;
+      Resolution_hz   : frequency :=  20  Hz;
+      use_scaler      : boolean   :=   false;
+      adjustable_freq : boolean   :=   false
     );
     port (
       rst_i     : in  std_logic;
@@ -31,9 +31,9 @@ end nco;
 architecture behavioral of debounce is
 
   signal scaler_s     : std_logic;
-  constant NCO_size_c : integer := nco_size(Fref_hz,Resolution_hz);
+  constant NCO_size_c : integer := nco_size_calc(Fref_hz,Resolution_hz);
 
-  constant nvalue_c   : unsigned(NCO_size_c-1 downto 0) := nvalue(Fref_hz,Fout_hz,NCO_size_c)
+  constant nvalue_c   : unsigned(NCO_size_c-1 downto 0) := increment_value_calc(Fref_hz,Fout_hz,NCO_size_c);
   signal   nvalue_s   : unsigned(NCO_size_c-1 downto 0) := (others=>'0');
   signal   nco_s      : unsigned(NCO_size_c-1 downto 0) := (others=>'0');
 
@@ -56,17 +56,13 @@ begin
 
   scaler_s <= scaler_i when use_scaler else '1';
 
-  nco_p : process(mclk_i, rst_i)
-  begin
-    if rst_i = '1' then
-      nco_s  <= (others=>'0');
-    elsif rising_edge(mclk_i) then
-      if scaler_s = '1' then
-        nco_s <= nco_s + n_value_s;
-      end if;
-    end if;
-   end process;
-
-   clkout_o <= nco_s(nco_s'high);
+  nco_u : nco_int
+      port map (
+        rst_i     => rst_i,
+        mclk_i    => mclk_i,
+        scaler_i  => scaler_s,
+        n_value_i => n_value_s,
+        clkout_o  => clkout_o
+      );
 
 end behavioral;

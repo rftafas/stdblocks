@@ -12,9 +12,9 @@ library stdblocks;
 
 entity pwm is
   generic (
-    Fref_hz  : real    := 100000000.0000;
-    Fout_hz  : real    :=   1000000.0000;
-    PWM_size : integer :=             16
+    Fref_hz  : frequency := 100 MHz;
+    Fout_hz  : frequency :=  10 MHz;
+    PWM_size : frequency :=  16
   );
   port (
     rst_i       : in  std_logic;

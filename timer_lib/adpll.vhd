@@ -15,9 +15,9 @@ library stdblocks;
 
 entity adpll is
   generic (
-    Fref_hz       : real := 100000000.0000;
-    Fout_hz       : real :=   1000000.0000;
-    Resolution_hz : real :=        20.0000
+    Fref_hz       : frequency := 100 MHz;
+    Fout_hz       : frequency :=  10 MHz;
+    Resolution_hz : frequency :=  20  Hz
   );
   port (
     rst_i    : in  std_logic;
@@ -29,7 +29,7 @@ end adpll;
 
 architecture behavioral of adpll is
 
-  constant nco_size_c   : integer := nco_size(Fref_hz,Resolution_hz);
+  constant nco_size_c   : integer := nco_size_calc(Fref_hz,Resolution_hz);
 
   signal clkout_s  : std_logic;
   signal clkout_en : std_logic;
@@ -62,10 +62,10 @@ begin
 
   nco_u : nco
       generic map (
-        Fref_hz         => Fref_hz/2**scale_factor,
+        Fref_hz         => Fref_hz,
         Fout_hz         => Fout_hz,
         Resolution_hz   => Resolution_hz,
-        use_scaler      => use_scale_f(scale_factor),
+        use_scaler      => false,
         adjustable_freq => true
       );
       port map (
@@ -80,5 +80,7 @@ begin
   clkin_u  : det_up port map (rst_i,mclk_i, clkin_i, clkin_en);
   up_s   <= clkout_en and not clkin_en;
   down_s <= not clkout_en and clkin_en;
+
+  clkout_o <= clkout_s;
 
 end behavioral;
