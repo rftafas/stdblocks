@@ -24,8 +24,8 @@ architecture behavioral of timer_lib_tb is
   constant PWM_size    : integer := 8;
   signal   rst_i       : std_logic;
   signal   mclk_i      : std_logic := 0;
-  signal   threshold_i : std_logic_vector(PWM_size-1 ownto 0);
-  signal   pwm_o       : std_logic
+  signal   threshold_i : std_logic_vector(PWM_size-1 downto 0);
+  signal   pwm_o       : std_logic;
 
 begin
 
