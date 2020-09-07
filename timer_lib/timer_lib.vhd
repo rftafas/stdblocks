@@ -5,19 +5,19 @@ library IEEE;
 
 package timer_lib is
 
-	type frequency is range 0 to 10000000000
+	type frequency is range 0 to 1000000000
 	units
 		Hz;
-		kHz = 1000.0000 Hz;
-		MHz = 1000.0000 kHz;
-		GHz = 1000.0000 MHz;
+		kHz = 1000 Hz;
+		MHz = 1000 kHz;
+		GHz = 1000 MHz;
 	end units;
 
 	function to_real ( input : frequency ) return real;
 	function to_real ( input :      time ) return real;
 
 	function nco_size_calc (
-		res : frequency;
+		res  : frequency;
 		Fref : frequency
 	) return integer;
 
@@ -27,7 +27,26 @@ package timer_lib is
 		size : integer
 	) return integer;
 
-	 function counter_cell_calc (Tout : time, Fref : frequency, cell_size : integer) return integer;
+	function timer_valid_check (period : time; Fref : frequency ) return boolean;
+
+	function cell_num_calc (
+		period : time;
+		Fref : frequency;
+		cell_size : integer
+	) return integer;
+
+	function cell_num_calc2 (
+		period : time;
+		Fref : frequency;
+		s_value : real
+	) return integer;
+
+	function rem_counter_limit (
+		period : time;
+		Fref : frequency;
+		cell_size : integer;
+		cell_num : integer
+	) return integer;
 
 	component nco is
 	    generic (
@@ -55,7 +74,7 @@ package timer_lib is
 	  port (
 	    rst_i       : in  std_logic;
 	    mclk_i      : in  std_logic;
-	    threshold_i : in  std_logic_vector(PWM_size-1 ownto 0);
+	    threshold_i : in  std_logic_vector(PWM_size-1 downto 0);
 	    pwm_o       : out std_logic
 	  );
 	end component;
@@ -121,7 +140,7 @@ package body timer_lib is
 
 	function to_real ( input : frequency ) return real is
 	begin
-		return real(frequency / 1 hz);
+		return real(input / 1 hz);
 	end to_real;
 
 	function to_real ( input :      time ) return real is
@@ -145,7 +164,7 @@ package body timer_lib is
 	begin
 		fout_tmp := to_real(Fout);
 		fref_tmp := to_real(fref);
-		size_tmp := to_real(2**size);
+		size_tmp := real(2**size);
 		return integer(fout_tmp*size_tmp/fref_tmp);
 	end increment_value_calc;
 
@@ -153,11 +172,12 @@ package body timer_lib is
 -- LONG COUNTER CALCULATIONS
 --------------------------------------------------------------------------------------------------------
 	function timer_valid_check (period : time; Fref : frequency ) return boolean is
-		variable period_tmp    : real;
-		variable fref_tmp      : real;
+		variable period_tmp : real;
+		variable fref_tmp   : real;
+		variable tmp        : real;
 	begin
 		period_tmp    := to_real(period);
-		Fref_tmp      := to_real(frequency);
+		Fref_tmp      := to_real(Fref);
 		tmp           := (Fref_tmp*period_tmp);
 		if tmp >= 1000.0000 then
 			return true;
@@ -170,27 +190,27 @@ package body timer_lib is
 		variable fref_tmp      : real;
 		variable cell_size_tmp : real;
 	begin
-		X_tmp         := log2(to_real(period)*to_real(frequency));
+		X_tmp         := log2(to_real(period)*to_real(Fref));
 		cell_size_tmp := real(cell_size);
-		return to_integer(X_tmp/log2(cell_size_tmp));
+		return integer(X_tmp/log2(cell_size_tmp));
 	end cell_num_calc;
 
 	function cell_num_calc2 (period : time; Fref : frequency; s_value : real) return integer is
 		variable X_tmp  : real;
 	begin
-		X_tmp := log2(to_real(period)*to_real(frequency));
-		return integer(X_tmp / s_value - 1);
+		X_tmp := log2(to_real(period)*to_real(Fref));
+		return integer(X_tmp / s_value - 1.0000);
 	end cell_num_calc2;
 
-	function rem_counter_limit (period : time; Fref : frequency; cell_size : integer; cell_num : integer) return real is
+	function rem_counter_limit (period : time; Fref : frequency; cell_size : integer; cell_num : integer) return integer is
 		variable period_tmp    : real;
 		variable fref_tmp      : real;
 		variable tmp           : real;
 	begin
 		period_tmp    := to_real(period);
-		Fref_tmp      := to_real(frequency);
+		Fref_tmp      := to_real(Fref);
 		tmp           := (period_tmp*fref_tmp) - real(cell_size**(cell_num+1));
-		return to_integer(tmp);
+		return integer(tmp);
 	end rem_counter_limit;
 
 end timer_lib;

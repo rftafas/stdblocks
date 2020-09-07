@@ -28,7 +28,7 @@ entity nco is
     );
 end nco;
 
-architecture behavioral of debounce is
+architecture behavioral of nco is
 
   signal scaler_s     : std_logic;
   constant NCO_size_c : integer := nco_size_calc(Fref_hz,Resolution_hz);

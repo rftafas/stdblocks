@@ -8,20 +8,25 @@ library stdblocks;
     use stdblocks.ram_lib.all;
     use stdblocks.fifo_lib.all;
 
-package axis_lib is
+package scheduler_lib is
 
-
-  function start_queue (input: integer_array; num: integer) return integer_array;
+  function integer_count (
+    input : integer;
+    limit : integer;
+    up_cnt : boolean
+  ) return integer;
+  
+  function start_queue ( input: integer ) return integer_vector;
 
 end package;
 
-package body axis_lib is
+package body scheduler_lib is
 
-function start_queue (input: integer) return integer_array is
-  variable tmp : integer_array(input-1 downto 0);
+function start_queue (input: integer) return integer_vector is
+  variable tmp : integer_vector(input-1 downto 0);
 begin
   for j in input-1 downto 0 loop
-    tmp(j) <= j;
+    tmp(j) := j;
   end loop;
   return tmp;
 end start_queue;

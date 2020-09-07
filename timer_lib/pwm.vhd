@@ -14,19 +14,19 @@ entity pwm is
   generic (
     Fref_hz  : frequency := 100 MHz;
     Fout_hz  : frequency :=  10 MHz;
-    PWM_size : frequency :=  16
+    PWM_size : integer   :=  16
   );
   port (
     rst_i       : in  std_logic;
     mclk_i      : in  std_logic;
-    threshold_i : in  std_logic_vector(PWM_size-1 ownto 0);
+    threshold_i : in  std_logic_vector(PWM_size-1 downto 0);
     pwm_o       : out std_logic
   );
 end pwm;
 
 architecture behavioral of pwm is
 
-  constant maxvalue_c : integer := to_integer(Fref_hz/Fout_hz);
+  constant maxvalue_c : integer := integer(Fref_hz/Fout_hz);
   signal   pwm_cnt    : unsigned(PWM_size-1 downto 0) := (others=>'0');
 
 begin
@@ -46,7 +46,7 @@ begin
         pwm_o   <= '1';
       else
         pwm_cnt <= pwm_cnt + 1;
-        if pwm_cnt = to_unsigned(threshold_i) then
+        if pwm_cnt = unsigned(threshold_i) then
           pwm_o   <= '0';
         end if;
       end if;

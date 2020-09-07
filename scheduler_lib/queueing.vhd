@@ -13,7 +13,9 @@ library ieee;
   use ieee.numeric_std.all;
 library expert;
   use expert.std_logic_expert.all;
-
+library stdblocks;
+  use stdblocks.scheduler_lib.all;
+  
 entity queueing is
     generic (
       n_elements : integer := 8;
@@ -35,7 +37,7 @@ architecture behavioral of queueing is
 
 
 
-  signal index_sr         : integer_array(n_elements-1 downto 0) := start_queue(n_elements);
+  signal index_sr         : integer_vector(n_elements-1 downto 0) := start_queue(n_elements);
   signal moving_index_s   : natural := 0;
   signal priority_index_s : natural := 0;
 
@@ -55,7 +57,7 @@ begin
           if grant_o(moving_index_s) = '1' then
             if ack_i(moving_index_s) = '1' then
               grant_o(moving_index_s) <= '0';
-              index_sr(moving_index_s downto 0) <= index_sr(moving_index_s downto 0) rll 1;
+              index_sr(moving_index_s downto 0) <= index_sr(moving_index_s downto 0) rol 1;
               moving_index_s <= n_elements-1;
             end if;
           elsif request_i(moving_index_s) = '1' then

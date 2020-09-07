@@ -18,7 +18,7 @@ entity nco_int is
     );
 end nco_int;
 
-architecture behavioral of debounce is
+architecture behavioral of nco_int is
 
   constant NCO_size_c : integer := n_value_i'lentgh;
   signal   nco_s      : unsigned(NCO_size_c-1 downto 0) := (others=>'0');

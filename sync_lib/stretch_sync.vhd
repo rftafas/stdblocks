@@ -47,7 +47,7 @@ begin
         db_tmp := '1';
       end if;
 
-      if da_tmp = '1' and db_tmp = '1' thelen
+      if da_tmp = '1' and db_tmp = '1' then
         da_tmp := '0';
         db_tmp := '0';
         dout_o <= '1';

@@ -32,7 +32,7 @@ architecture behavioral of long_counter is
 
 begin
 
-  for j in 0 to sr_number-1 generate
+  cell_gen : for j in 0 to sr_number-1 generate
     cell_u : long_counter_cell
       generic map(
         sr_size => sr_size

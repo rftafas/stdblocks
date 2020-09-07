@@ -27,9 +27,9 @@ end precise_long_counter;
 architecture behavioral of precise_long_counter is
 
   constant s_value_c  : real    := ceil(log2(real(sr_size)));
-  constant sr_size_c  : integer := 2**integer(s_value_c)
-  constant sr_number  : integer := cell_num_calc2(sub_period,fref,s_value_c);
-  constant cnt_limit  : integer := rem_counter_limit(period,Fref,s_value_c,sr_number);
+  constant sr_size_c  : integer := 2**integer(s_value_c);
+  constant sr_number  : integer := cell_num_calc2(period,fref_hz,s_value_c);
+  constant cnt_limit  : integer := rem_counter_limit(period,fref_hz,integer(s_value_c),sr_number);
 
   signal sr_en       : std_logic_vector(sr_number-1 downto 0) := (others=>'0');
   signal out_en      : std_logic_vector(sr_number-1 downto 0) := (others=>'0');
@@ -43,7 +43,7 @@ begin
     report "Timer Constraints invalid."
     severity failure;
 
-  for j in 0 to sr_number-1 generate
+  cell_gen : for j in 0 to sr_number-1 generate
     cell_u : long_counter_cell
       generic map(
         sr_size => sr_size_c

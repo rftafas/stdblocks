@@ -67,7 +67,7 @@ begin
         Resolution_hz   => Resolution_hz,
         use_scaler      => false,
         adjustable_freq => true
-      );
+      )
       port map (
         rst_i     => rst_i,
         mclk_i    => mclk_i,
