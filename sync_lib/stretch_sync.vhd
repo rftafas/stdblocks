@@ -29,6 +29,8 @@ architecture behavioral of stretch_sync is
 begin
 
   process(mclk_i)
+    variable da_tmp : std_logic := '0';
+    variable db_tmp : std_logic := '0';
   begin
     if rst_i = '1' then
       da_tmp := '0';
@@ -45,7 +47,7 @@ begin
         db_tmp := '1';
       end if;
 
-      if da_tmp = '1' and db_tmp = '1' thelen
+      if da_tmp = '1' and db_tmp = '1' then
         da_tmp := '0';
         db_tmp := '0';
         dout_o <= '1';
