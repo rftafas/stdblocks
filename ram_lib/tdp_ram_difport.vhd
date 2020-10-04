@@ -1,8 +1,16 @@
 ----------------------------------------------------------------------------------
--- ram_lib  by Ricardo F Tafas Jr
--- This is an ancient library I've been using since my earlier FPGA days.
--- Code is provided AS IS.
--- Submit any suggestions to GITHUB ticket system.
+--Copyright 2020 Ricardo F Tafas Jr
+
+--Licensed under the Apache License, Version 2.0 (the "License"); you may not
+--use this file except in compliance with the License. You may obtain a copy of
+--the License at
+
+--   http://www.apache.org/licenses/LICENSE-2.0
+
+--Unless required by applicable law or agreed to in writing, software distributed
+--under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+--OR CONDITIONS OF ANY KIND, either express or implied. See the License for
+--the specific language governing permissions and limitations under the License.
 ----------------------------------------------------------------------------------
 --RAM with different aspect ratios. NOTE:
 --Try to keep this RAM as small as possible as it is not very efficient.
@@ -18,9 +26,9 @@ library expert;
 entity tdp_ram_difport is
     generic (
       --ram_type   : mem_t   := "block"
-      ram_size   : integer := 1;
       porta_size : integer := 1;
-      portb_size : integer := 8
+      portb_size : integer := 8;
+      ram_size   : integer := 1
     );
     port (
       --general
@@ -45,52 +53,39 @@ end tdp_ram_difport;
 
 architecture behavioral of tdp_ram_difport is
 
-  constant ram_word : integer := porta_size*portb_size;
+  constant ram_word       : integer := porta_size*portb_size;
+  constant total_ram_size : integer := ram_word*ram_size;
 
-  constant min_port_size : integer := min(porta_size, portb_size);
-	constant max_port_size : integer := max(porta_size, portb_size);
-	constant ram_size      : integer := min_port_size;
-	constant ram_ratio     : integer := max_port_size / min_port_size;
+  signal ram_s : std_logic_vector(total_ram_size-1 downto 0);
 
-	-- An asymmetric RAM is modeled in a similar way as a symmetric RAM, with an
-	-- array of array object. Its aspect ratio corresponds to the port with the
-	-- lower data width (larger depth)
-	type ramType is array (0 to maxSIZE - 1) of std_logic_vector(minWIDTH - 1 downto 0);
-
-	signal my_ram : ramType := (others => (others => '0'));
-
-	signal readA : std_logic_vector(WIDTHA - 1 downto 0) := (others => '0');
-	signal readB : std_logic_vector(WIDTHB - 1 downto 0) := (others => '0');
-	signal regA  : std_logic_vector(WIDTHA - 1 downto 0) := (others => '0');
-	signal regB  : std_logic_vector(WIDTHB - 1 downto 0) := (others => '0');
 
 begin
 
-  process(clkA)
+  process(clka_i)
+    variable range_v : range_t;
 	begin
-		if rising_edge(clkA) then
-			if enA = '1' then
-				readA <= my_ram(conv_integer(addrA));
-				if weA = '1' then
-					my_ram(conv_integer(addrA)) <= diA;
+		if rising_edge(clka_i) then
+			if ena_i = '1' then
+        range_v := range_of(to_integer(addra_i),porta_size);
+				dataa_o <= ram_s(range_v.high downto range_v.low);
+				if wea_i = '1' then
+					ram_s(range_v.high downto range_v.low) <= dataa_i;
 				end if;
 			end if;
-			regA <= readA;
 		end if;
 	end process;
 
-	process(clkB)
+  process(clkb_i)
+    variable range_v : range_t;
 	begin
-		if rising_edge(clkB) then
-			for i in 0 to RATIO - 1 loop
-				if enB = '1' then
-					readB((i + 1) * minWIDTH - 1 downto i * minWIDTH) <= my_ram(conv_integer(addrB & conv_std_logic_vector(i, log2(RATIO))));
-					if weB = '1' then
-						my_ram(conv_integer(addrB & conv_std_logic_vector(i, log2(RATIO)))) <= diB((i + 1) * minWIDTH - 1 downto i * minWIDTH);
-					end if;
+		if rising_edge(clkb_i) then
+			if enb_i = '1' then
+        range_v := range_of(to_integer(addrb_i),portb_size);
+				datab_o <= ram_s(range_v.high downto range_v.low);
+				if wea_i = '1' then
+					ram_s(range_v.high downto range_v.low) <= datab_i;
 				end if;
-			end loop;
-			regB <= readB;
+			end if;
 		end if;
 	end process;
 

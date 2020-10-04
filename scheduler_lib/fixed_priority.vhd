@@ -1,12 +1,16 @@
 ----------------------------------------------------------------------------------
--- Priority Engine for granting resources to those requesting it.
--- Usage: choose one of the priority types.
--- Raise the request input to request a resource. wait for grant.
--- when done using, ack it.
--- This block does not prevent bad behavior. that can be made outside with
--- nice counters.
---
--- if you are asking why natural, try asking the guys from vivadosim.
+--Copyright 2020 Ricardo F Tafas Jr
+
+--Licensed under the Apache License, Version 2.0 (the "License"); you may not
+--use this file except in compliance with the License. You may obtain a copy of
+--the License at
+
+--   http://www.apache.org/licenses/LICENSE-2.0
+
+--Unless required by applicable law or agreed to in writing, software distributed
+--under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+--OR CONDITIONS OF ANY KIND, either express or implied. See the License for
+--the specific language governing permissions and limitations under the License.
 ----------------------------------------------------------------------------------
 library ieee;
   use ieee.std_logic_1164.all;
@@ -36,6 +40,7 @@ begin
 
   fix_p : process(all)
       variable index : integer := 0;
+      variable grant_v : std_logic_vector(grant_o'range);
   begin
     if rst_i = '1' then
       index   := 0;
@@ -47,8 +52,10 @@ begin
           grant_o <= (others=>'0');
         end if;
       else
-        index   := index_of_1(request_i);
-        grant_o <= (index => '1', others=>'0');
+        index          := index_of_1(request_i);
+        grant_v        := (others=>'0');
+        grant_v(index) := '1';
+        grant_o <= grant_v;
         index_o <= index;
       end if;
     end if;

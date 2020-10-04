@@ -1,13 +1,23 @@
 ----------------------------------------------------------------------------------
--- Sync_lib  by Ricardo F Tafas Jr
--- This is an ancient library I've been using since my earlier FPGA days.
--- Code is provided AS IS.
--- Submit any suggestions to GITHUB ticket system.
+--Copyright 2020 Ricardo F Tafas Jr
+
+--Licensed under the Apache License, Version 2.0 (the "License"); you may not
+--use this file except in compliance with the License. You may obtain a copy of
+--the License at
+
+--   http://www.apache.org/licenses/LICENSE-2.0
+
+--Unless required by applicable law or agreed to in writing, software distributed
+--under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+--OR CONDITIONS OF ANY KIND, either express or implied. See the License for
+--the specific language governing permissions and limitations under the License.
 ----------------------------------------------------------------------------------
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
 	use IEEE.math_real.all;
+library expert;
+  use expert.std_logic_expert.all;
 library stdblocks;
   use stdblocks.timer_lib.all;
 
@@ -17,7 +27,8 @@ entity nco is
       Fout_hz         : frequency :=  10 MHz;
       Resolution_hz   : frequency :=  20  Hz;
       use_scaler      : boolean   :=   false;
-      adjustable_freq : boolean   :=   false
+      adjustable_freq : boolean   :=   false;
+      NCO_size_c      : natural := 16
     );
     port (
       rst_i     : in  std_logic;
@@ -30,12 +41,11 @@ end nco;
 
 architecture behavioral of nco is
 
-  signal scaler_s     : std_logic;
-  constant NCO_size_c : integer := nco_size_calc(Fref_hz,Resolution_hz);
-
-  constant nvalue_c   : unsigned(NCO_size_c-1 downto 0) := increment_value_calc(Fref_hz,Fout_hz,NCO_size_c);
-  signal   nvalue_s   : unsigned(NCO_size_c-1 downto 0) := (others=>'0');
-  signal   nco_s      : unsigned(NCO_size_c-1 downto 0) := (others=>'0');
+  signal   scaler_s        : std_logic;
+  constant internal_size_c : integer := nco_size_calc(Fref_hz,Resolution_hz,adjustable_freq,NCO_size_c);
+  constant n_value_c       : unsigned(internal_size_c-1 downto 0) := to_unsigned(increment_value_calc(Fref_hz,Fout_hz,NCO_size_c),internal_size_c);
+  signal   n_value_s       : unsigned(internal_size_c-1 downto 0) := (others=>'0');
+  signal   nco_s           : unsigned(internal_size_c-1 downto 0) := (others=>'0');
 
 begin
 
@@ -57,12 +67,15 @@ begin
   scaler_s <= scaler_i when use_scaler else '1';
 
   nco_u : nco_int
-      port map (
-        rst_i     => rst_i,
-        mclk_i    => mclk_i,
-        scaler_i  => scaler_s,
-        n_value_i => n_value_s,
-        clkout_o  => clkout_o
-      );
+    generic map(
+      NCO_size_c => NCO_size_c
+    )
+    port map (
+      rst_i     => rst_i,
+      mclk_i    => mclk_i,
+      scaler_i  => scaler_s,
+      n_value_i => to_std_logic_vector(n_value_s),
+      clkout_o  => clkout_o
+    );
 
 end behavioral;

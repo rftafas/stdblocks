@@ -1,10 +1,16 @@
 ----------------------------------------------------------------------------------
--- timer_lib  by Ricardo F Tafas Jr
--- Code is provided AS IS.
--- Submit any suggestions to GITHUB ticket system.
-----------------------------------------------------------------------------------
--- ADPLL will filter any input clock and get it back to 50% duty cycle with error
--- MAX at +-1 reference clock cycle.
+--Copyright 2020 Ricardo F Tafas Jr
+
+--Licensed under the Apache License, Version 2.0 (the "License"); you may not
+--use this file except in compliance with the License. You may obtain a copy of
+--the License at
+
+--   http://www.apache.org/licenses/LICENSE-2.0
+
+--Unless required by applicable law or agreed to in writing, software distributed
+--under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+--OR CONDITIONS OF ANY KIND, either express or implied. See the License for
+--the specific language governing permissions and limitations under the License.
 ----------------------------------------------------------------------------------
 library ieee;
   use ieee.std_logic_1164.all;
@@ -23,7 +29,7 @@ architecture behavioral of timer_lib_tb is
 
   constant PWM_size    : integer := 8;
   signal   rst_i       : std_logic;
-  signal   mclk_i      : std_logic := 0;
+  signal   mclk_i      : std_logic := '0';
   signal   threshold_i : std_logic_vector(PWM_size-1 downto 0);
   signal   pwm_o       : std_logic;
 
@@ -32,7 +38,7 @@ begin
   rst_i  <= '0', '1'   after 30 ns;
   mclk_i <= not mclk_i after  5 ns;
 
-  threshold_i <= (PWM_size=>'1', others=>'0');
+  threshold_i <= (PWM_size-1 =>'1', others=>'0');
 
   pwm_i : pwm
   generic map (

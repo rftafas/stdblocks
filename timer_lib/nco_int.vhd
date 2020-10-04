@@ -1,26 +1,38 @@
 ----------------------------------------------------------------------------------
--- Sync_lib  by Ricardo F Tafas Jr
--- This is an ancient library I've been using since my earlier FPGA days.
--- Code is provided AS IS.
--- Submit any suggestions to GITHUB ticket system.
+--Copyright 2020 Ricardo F Tafas Jr
+
+--Licensed under the Apache License, Version 2.0 (the "License"); you may not
+--use this file except in compliance with the License. You may obtain a copy of
+--the License at
+
+--   http://www.apache.org/licenses/LICENSE-2.0
+
+--Unless required by applicable law or agreed to in writing, software distributed
+--under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+--OR CONDITIONS OF ANY KIND, either express or implied. See the License for
+--the specific language governing permissions and limitations under the License.
 ----------------------------------------------------------------------------------
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
+library expert;
+  use expert.std_logic_expert.all;
 
 entity nco_int is
+    generic (
+      NCO_size_c : natural := 16
+    );
     port (
       rst_i     : in  std_logic;
       mclk_i    : in  std_logic;
       scaler_i  : in  std_logic;
-      n_value_i : in  std_logic_vector;
+      n_value_i : in  std_logic_vector(NCO_size_c-1 downto 0);
       clkout_o  : out std_logic
     );
 end nco_int;
 
 architecture behavioral of nco_int is
 
-  constant NCO_size_c : integer := n_value_i'lentgh;
   signal   nco_s      : unsigned(NCO_size_c-1 downto 0) := (others=>'0');
 
 begin

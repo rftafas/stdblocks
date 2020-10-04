@@ -1,3 +1,17 @@
+----------------------------------------------------------------------------------
+--Copyright 2020 Ricardo F Tafas Jr
+
+--Licensed under the Apache License, Version 2.0 (the "License"); you may not
+--use this file except in compliance with the License. You may obtain a copy of
+--the License at
+
+--   http://www.apache.org/licenses/LICENSE-2.0
+
+--Unless required by applicable law or agreed to in writing, software distributed
+--under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+--OR CONDITIONS OF ANY KIND, either express or implied. See the License for
+--the specific language governing permissions and limitations under the License.
+----------------------------------------------------------------------------------
 library IEEE;
 	use IEEE.std_logic_1164.all;
 	use IEEE.numeric_std.all;
@@ -18,7 +32,9 @@ package timer_lib is
 
 	function nco_size_calc (
 		res  : frequency;
-		Fref : frequency
+		Fref : frequency;
+		adustable : boolean;
+		fixed_size : integer
 	) return integer;
 
 	function increment_value_calc (
@@ -54,7 +70,8 @@ package timer_lib is
 	      Fout_hz         : frequency :=  10 MHz;
 	      Resolution_hz   : frequency :=  20  Hz;
 	      use_scaler      : boolean   :=   false;
-	      adjustable_freq : boolean   :=   false
+	      adjustable_freq : boolean   :=   false;
+	      NCO_size_c      : natural := 16
 	    );
 	    port (
 	      rst_i     : in  std_logic;
@@ -133,7 +150,20 @@ package timer_lib is
 	  );
 	end component;
 
-end timer_lib;
+	component nco_int is
+		generic (
+      NCO_size_c : natural := 16
+    );
+    port (
+      rst_i     : in  std_logic;
+      mclk_i    : in  std_logic;
+      scaler_i  : in  std_logic;
+      n_value_i : in  std_logic_vector(NCO_size_c-1 downto 0);
+      clkout_o  : out std_logic
+    );
+	end component;
+
+end package timer_lib;
 
 --a arquitetura
 package body timer_lib is
@@ -148,13 +178,17 @@ package body timer_lib is
 		return real(input / 1 sec);
 	end to_real;
 
-	function nco_size_calc (res : frequency; Fref : frequency) return integer is
+	function nco_size_calc (res : frequency; Fref : frequency; adustable : boolean; fixed_size : integer) return integer is
 		variable res_tmp  : real;
 		variable fref_tmp : real;
 	begin
-		res_tmp  := to_real(res);
-		fref_tmp := to_real(fref);
-		return integer(ceil(log2(fref_tmp/res_tmp)));
+		if adustable then
+			res_tmp  := to_real(res);
+			fref_tmp := to_real(fref);
+			return integer(ceil(log2(fref_tmp/res_tmp)));
+		else
+			return fixed_size;
+		end if;
 	end nco_size_calc;
 
 	function increment_value_calc (Fref : frequency; Fout : frequency; size : integer ) return integer is
