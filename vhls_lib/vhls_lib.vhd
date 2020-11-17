@@ -18,14 +18,13 @@ library expert;
     use expert.std_string.all;
 
 package vhls_lib is
-  type procedure_status_t is ( BUSY, READY, PROC_DONE, PROC_ERROR);
+  type procedure_status_t is ( BUSY, READY, DONE, PERROR);
 
 
   constant max_proc_name : positive := 256;
   constant max_proc_list : positive := 256;
 
   type procedure_list_t is array (0 to max_proc_list-1) of string(1 to max_proc_name);
-  --type procedure_status_t is ( BUSY, READY, PROC_DONE, PROC_ERROR);
 
   type runner_t is record
     current_process  : natural;
