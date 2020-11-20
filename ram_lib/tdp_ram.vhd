@@ -1,8 +1,16 @@
 ----------------------------------------------------------------------------------
--- ram_lib  by Ricardo F Tafas Jr
--- This is an ancient library I've been using since my earlier FPGA days.
--- Code is provided AS IS.
--- Submit any suggestions to GITHUB ticket system.
+--Copyright 2020 Ricardo F Tafas Jr
+
+--Licensed under the Apache License, Version 2.0 (the "License"); you may not
+--use this file except in compliance with the License. You may obtain a copy of
+--the License at
+
+--   http://www.apache.org/licenses/LICENSE-2.0
+
+--Unless required by applicable law or agreed to in writing, software distributed
+--under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+--OR CONDITIONS OF ANY KIND, either express or implied. See the License for
+--the specific language governing permissions and limitations under the License.
 ----------------------------------------------------------------------------------
 -- TDP_RAM, true dual port memory.
 ----------------------------------------------------------------------------------
@@ -43,11 +51,10 @@ end tdp_ram;
 architecture behavioral of tdp_ram is
 
   constant ram_size_c : integer := 2**mem_size;
-  type ram_data_t  is array (ram_size_c-1 downto 0) of std_logic_vector(port_size-1 downto 0);
-  shared variable ram_data_v : ram_data_t := (others=>(others=>'0'));
+  signal   ram_data_s : std_logic_array(ram_size_c-1 downto 0)(port_size-1 downto 0) := (others=>(others=>'0'));
 
   constant ram_string : string := ram_type_dec(ram_type);
-  attribute ram_style of ram_data_v : variable is ram_string;
+  attribute ram_style of ram_data_s : signal is ram_string;
 
 begin
 
@@ -56,7 +63,7 @@ begin
     if rising_edge(clka_i) then
       if ena_i = '1' then
           if wea_i = '1' then
-            ram_data_v(to_integer(addra_i)) := dataa_i;
+            ram_data_s(to_integer(addra_i)) <= dataa_i;
           end if;
       end if;
     end if;
@@ -68,7 +75,7 @@ begin
       dataa_o <= (others=>'0');
     elsif rising_edge(clka_i) then
       if ena_i = '1' then
-        dataa_o <= ram_data_v(to_integer(addra_i));
+        dataa_o <= ram_data_s(to_integer(addra_i));
       end if;
     end if;
   end process;
@@ -78,7 +85,7 @@ begin
     if rising_edge(clkb_i) then
       if enb_i = '1' then
           if web_i = '1' then
-            ram_data_v(to_integer(addrb_i)) := datab_i;
+            ram_data_s(to_integer(addrb_i)) <= datab_i;
           end if;
       end if;
     end if;
@@ -90,7 +97,7 @@ begin
       datab_o <= (others=>'0');
     elsif rising_edge(clkb_i) then
       if enb_i = '1' then
-        datab_o <= ram_data_v(to_integer(addrb_i));
+        datab_o <= ram_data_s(to_integer(addrb_i));
       end if;
     end if;
   end process;
