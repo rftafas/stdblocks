@@ -1,0 +1,8 @@
+# End time: 21:31:19 on Nov 19,2020, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 1
+# vsim -modelsimini /home/rftafas/Projects/stdblocks/scheduler_lib/vunit_out/modelsim/modelsim.ini -wlf /home/rftafas/Projects/stdblocks/scheduler_lib/vunit_out/test_output/stdblocks.scheduler_lib_tb.testing_queueing_a0fbd62e30f296b1fcb9ab16268b7c29d8938a9f/modelsim/vsim.wlf -quiet -t ps -onfinish stop stdblocks.scheduler_lib_tb(simulation) -L vunit_lib -L expert -L stdblocks -g/scheduler_lib_tb/runner_cfg="active python runner : true,enabled_test_cases : testing queueing,output path : /home/rftafas/Projects/stdblocks/scheduler_lib/vunit_out/test_output/stdblocks.scheduler_lib_tb.testing_queueing_a0fbd62e30f296b1fcb9ab16268b7c29d8938a9f/,tb path : /home/rftafas/Projects/stdblocks/scheduler_lib/,use_color : true" 
+# Start time: 21:31:19 on Nov 19,2020
+# ** Warning: Design size of 21371 statements exceeds ModelSim-Intel FPGA Starter Edition recommended capacity.
+# Expect performance to be adversely affected.
+# Break in Subprogram stop at /opt/quicklogic/conda/lib/python3.7/site-packages/vunit/vhdl/core/src/stop_body_2008p.vhd line 13
+# Stopped at /opt/quicklogic/conda/lib/python3.7/site-packages/vunit/vhdl/core/src/stop_body_2008p.vhd line 13

@@ -1,0 +1,43 @@
+# do /opt/quicklogic/conda/lib/python3.7/site-packages/vunit/sim_if/tcl_read_eval_loop.tcl
+# vsim -modelsimini /home/rftafas/Projects/stdblocks/scheduler_lib/vunit_out/modelsim/modelsim.ini -wlf /home/rftafas/Projects/stdblocks/scheduler_lib/vunit_out/test_output/stdblocks.scheduler_lib_tb.Sanity_check_for_system._331bff47b95538ad76ac508cf6f39ad90fe696f2/modelsim/vsim.wlf -quiet -t ps -onfinish stop stdblocks.scheduler_lib_tb(simulation) -L vunit_lib -L expert -L stdblocks -g/scheduler_lib_tb/runner_cfg="active python runner : true,enabled_test_cases : Sanity check for system.,output path : /home/rftafas/Projects/stdblocks/scheduler_lib/vunit_out/test_output/stdblocks.scheduler_lib_tb.Sanity_check_for_system._331bff47b95538ad76ac508cf6f39ad90fe696f2/,tb path : /home/rftafas/Projects/stdblocks/scheduler_lib/,use_color : true" 
+# Start time: 21:41:00 on Nov 19,2020
+# ** Warning: Design size of 22945 statements exceeds ModelSim-Intel FPGA Starter Edition recommended capacity.
+# Expect performance to be adversely affected.
+# ** Note: System Sane. Begin tests.
+#    Time: 0 ps  Iteration: 1  Instance: /scheduler_lib_tb
+# Break in Subprogram stop at /opt/quicklogic/conda/lib/python3.7/site-packages/vunit/vhdl/core/src/stop_body_2008p.vhd line 13
+# Stopped at /opt/quicklogic/conda/lib/python3.7/site-packages/vunit/vhdl/core/src/stop_body_2008p.vhd line 13
+# End time: 21:41:00 on Nov 19,2020, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 1
+# vsim -modelsimini /home/rftafas/Projects/stdblocks/scheduler_lib/vunit_out/modelsim/modelsim.ini -wlf /home/rftafas/Projects/stdblocks/scheduler_lib/vunit_out/test_output/stdblocks.scheduler_lib_tb.Select_Channel_ceabbe1edf1e244f2b75e309c557237318bfcc25/modelsim/vsim.wlf -quiet -t ps -onfinish stop stdblocks.scheduler_lib_tb(simulation) -L vunit_lib -L expert -L stdblocks -g/scheduler_lib_tb/runner_cfg="active python runner : true,enabled_test_cases : Select Channel,output path : /home/rftafas/Projects/stdblocks/scheduler_lib/vunit_out/test_output/stdblocks.scheduler_lib_tb.Select_Channel_ceabbe1edf1e244f2b75e309c557237318bfcc25/,tb path : /home/rftafas/Projects/stdblocks/scheduler_lib/,use_color : true" 
+# Start time: 21:41:00 on Nov 19,2020
+# ** Warning: Design size of 22945 statements exceeds ModelSim-Intel FPGA Starter Edition recommended capacity.
+# Expect performance to be adversely affected.
+# ** Fatal: (vsim-3734) Index value -2147483648 is out of range 7 downto 0.
+#    Time: 0 ps  Iteration: 1  Process: /scheduler_lib_tb/main File: /home/rftafas/Projects/stdblocks/scheduler_lib/scheduler_lib_tb.vhd
+# Fatal error in Process main at /home/rftafas/Projects/stdblocks/scheduler_lib/scheduler_lib_tb.vhd line 58
+# 
+# HDL call sequence:
+# Stopped at /home/rftafas/Projects/stdblocks/scheduler_lib/scheduler_lib_tb.vhd 58 Process main
+# 
+# 
+# Test Run Failed!
+# 
+# Stack trace result from 'tb' command
+#  /home/rftafas/Projects/stdblocks/scheduler_lib/scheduler_lib_tb.vhd 58 return [address 0xf6d86af5] Process main
+# 
+# 
+# Surrounding code from 'see' command
+#   53 : 				elsif run("Select Channel") then
+#   54 : 					if j = n_elements then
+#   55 : 						j := 0;
+#   56 : 					end if;
+#   57 : 
+# ->58 : 					request_i(j) <= '1';
+#   59 : 					wait until rising_edge(clk_i);
+#   60 : 					check_true( index_o = j, result("Pass."));
+#   61 : 					check_true( grant_o(j) = '1', result("Pass."));
+#   62 : 				end if;
+# 
+# End time: 21:41:01 on Nov 19,2020, Elapsed time: 0:00:01
+# Errors: 1, Warnings: 1

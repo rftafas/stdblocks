@@ -26,10 +26,8 @@ entity round_robin_hard is
       mode       : integer := 0
     );
     port (
-      --general
       clk_i       : in  std_logic;
       rst_i       : in  std_logic;
-      --python script port creation starts
       request_i    : in  std_logic_vector(n_elements-1 downto 0);
       ack_i        : in  std_logic_vector(n_elements-1 downto 0);
       grant_o      : out std_logic_vector(n_elements-1 downto 0);
