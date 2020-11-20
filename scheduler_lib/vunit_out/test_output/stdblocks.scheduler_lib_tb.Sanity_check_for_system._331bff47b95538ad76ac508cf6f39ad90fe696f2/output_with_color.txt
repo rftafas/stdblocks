@@ -1,2 +1,0 @@
-[33;1mskip[0m[m (P=0 S=1 F=0 T=2) stdblocks.scheduler_lib_tb.Sanity check for system. (25.1 seconds)
-[0m
