@@ -20,15 +20,15 @@ library expert;
 
 entity fixed_priority is
     generic (
-      n_elements : integer := 8
+      n_elements : positive := 8
     );
     port (
-      clk_i       : in  std_logic;
-      rst_i       : in  std_logic;
-      request_i    : in  std_logic_vector(n_elements-1 downto 0);
-      ack_i        : in  std_logic_vector(n_elements-1 downto 0);
-      grant_o      : out std_logic_vector(n_elements-1 downto 0);
-      index_o      : out natural
+      clk_i     : in  std_logic;
+      rst_i     : in  std_logic;
+      request_i : in  std_logic_vector(n_elements-1 downto 0);
+      ack_i     : in  std_logic_vector(n_elements-1 downto 0);
+      grant_o   : out std_logic_vector(n_elements-1 downto 0);
+      index_o   : out natural
     );
 end fixed_priority;
 
@@ -38,7 +38,6 @@ begin
 
   fix_p : process(all)
       variable index : integer := 0;
-      variable grant_v : std_logic_vector(grant_o'range);
   begin
     if rst_i = '1' then
       index   := 0;
@@ -49,12 +48,11 @@ begin
         if ack_i(index) = '1' then
           grant_o <= (others=>'0');
         end if;
-      else
+      elsif request_i /= (request_i'range => '0') then
         index          := index_of_1(request_i);
-        grant_v        := (others=>'0');
-        grant_v(index) := '1';
-        grant_o <= grant_v;
-        index_o <= index;
+        grant_o        <= (others=>'0');
+        grant_o(index) <= '1';
+        index_o        <= index;
       end if;
     end if;
   end process;

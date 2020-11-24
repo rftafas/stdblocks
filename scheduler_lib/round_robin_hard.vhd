@@ -22,47 +22,44 @@ library stdblocks;
 
 entity round_robin_hard is
     generic (
-      n_elements : integer := 8;
-      mode       : integer := 0
+      n_elements : integer := 8
     );
     port (
-      clk_i       : in  std_logic;
-      rst_i       : in  std_logic;
-      request_i    : in  std_logic_vector(n_elements-1 downto 0);
-      ack_i        : in  std_logic_vector(n_elements-1 downto 0);
-      grant_o      : out std_logic_vector(n_elements-1 downto 0);
-      index_o      : out natural
+      clk_i     : in  std_logic;
+      rst_i     : in  std_logic;
+      request_i : in  std_logic_vector(n_elements-1 downto 0);
+      ack_i     : in  std_logic_vector(n_elements-1 downto 0);
+      grant_o   : out std_logic_vector(n_elements-1 downto 0);
+      index_o   : out natural
     );
 end round_robin_hard;
 
 architecture behavioral of round_robin_hard is
 
-  type index_sr_t is array (n_elements-1 downto 0) of integer;
-  signal index_sr         : index_sr_t := (others=>0);
   signal moving_index_s   : natural := 0;
   signal priority_index_s : natural := 0;
 
 begin
 
     rr_p : process(all)
-      variable grant_v : std_logic_vector(grant_o'range);
     begin
       if rst_i = '1' then
         grant_o        <= (others=>'0');
-        moving_index_s <= 0;
+        moving_index_s <= n_elements-1;
+        index_o        <= 0;
       elsif rising_edge(clk_i) then
-        if grant_o(moving_index_s) = '1' then --we test VHDL2008 hability to read out ports.
+        if grant_o(moving_index_s) = '1' then
           if ack_i(moving_index_s) = '1' then
-              moving_index_s <= integer_count(moving_index_s,n_elements-1,true);
+              moving_index_s <= integer_count(moving_index_s,n_elements-1,false);
               grant_o        <= (others=>'0');
           end if;
         elsif request_i(moving_index_s) = '1' then
-          grant_v                 := (others=>'0');
-          grant_v(moving_index_s) := '1';
-          grant_o <= grant_v;
+          grant_o                 <= (others=>'0');
+          grant_o(moving_index_s) <= '1';
+          index_o <= moving_index_s;
         end if;
       end if;
     end process;
-    index_o <= moving_index_s;
+
 
 end behavioral;

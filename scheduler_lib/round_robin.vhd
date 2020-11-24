@@ -17,44 +17,25 @@ library ieee;
   use ieee.numeric_std.all;
 library expert;
   use expert.std_logic_expert.all;
+  --local library
+  use work.scheduler_lib.all;
 
 entity round_robin is
     generic (
-      n_elements : integer := 8;
-      mode       : integer := 0
+      n_elements : integer := 8
     );
     port (
-      clk_i       : in  std_logic;
-      rst_i       : in  std_logic;
-      request_i    : in  std_logic_vector(n_elements-1 downto 0);
-      ack_i        : in  std_logic_vector(n_elements-1 downto 0);
-      grant_o      : out std_logic_vector(n_elements-1 downto 0);
-      index_o      : out natural
+      clk_i     : in  std_logic;
+      rst_i     : in  std_logic;
+      request_i : in  std_logic_vector(n_elements-1 downto 0);
+      ack_i     : in  std_logic_vector(n_elements-1 downto 0);
+      grant_o   : out std_logic_vector(n_elements-1 downto 0);
+      index_o   : out natural
     );
 end round_robin;
 
 architecture behavioral of round_robin is
 
-  function integer_count ( input : integer; limit : integer; up_cnt : boolean) return integer is
-    variable tmp : integer;
-  begin
-    if up_cnt then
-      if input = limit then
-        tmp := 0;
-      else
-        tmp := input+1;
-      end if;
-    else
-      if input = 0 then
-        tmp := limit-1;
-      else
-        tmp := input-1;
-      end if;
-    end if;
-    return tmp;
-  end integer_count;
-
-  signal index_sr         : integer_vector(n_elements-1 downto 0) := (others=>0);
   signal moving_index_s   : natural := 0;
   signal priority_index_s : natural := 0;
 
@@ -65,19 +46,21 @@ begin
   begin
     if rst_i = '1' then
       grant_o        <= (others=>'0');
-      moving_index_s <= 0;
+      moving_index_s <= n_elements-1;
     elsif rising_edge(clk_i) then
       if grant_o(moving_index_s) = '1' then --we test VHDL2008 hability to read out ports.
         if ack_i(moving_index_s) = '1' then
-            moving_index_s <= integer_count(moving_index_s,n_elements-1,true);
             grant_o        <= (others=>'0');
+            moving_index_s <= integer_count(moving_index_s,n_elements-1,false);
         end if;
       elsif request_i(moving_index_s) = '1' then
-        grant_v                 := (others=>'0');
-        grant_v(moving_index_s) := '1';
-        grant_o <= grant_v;
+        if grant_o = std_logic_vector'( grant_o'range => '0' ) then
+          grant_v                 := (others=>'0');
+          grant_v(moving_index_s) := '1';
+          grant_o <= grant_v;
+        end if;
       else
-        moving_index_s <= integer_count(moving_index_s,n_elements-1,true);
+        moving_index_s <= integer_count(moving_index_s,n_elements-1,false);
       end if;
     end if;
   end process;

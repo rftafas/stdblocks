@@ -34,8 +34,7 @@ package scheduler_lib is
 
   component queueing
     generic (
-      n_elements : integer := 8;
-      mode       : integer := 0
+      n_elements : integer := 8
     );
     port (
       clk_i     : in  std_logic;
@@ -49,8 +48,7 @@ package scheduler_lib is
 
   component round_robin
     generic (
-      n_elements : integer := 8;
-      mode       : integer := 0
+      n_elements : integer := 8
     );
     port (
       clk_i     : in  std_logic;
@@ -64,8 +62,7 @@ package scheduler_lib is
 
   component round_robin_hard
     generic (
-      n_elements : integer := 8;
-      mode       : integer := 0
+      n_elements : integer := 8
     );
     port (
       clk_i     : in  std_logic;
@@ -133,7 +130,7 @@ begin
     end if;
   else
     if input = 0 then
-      tmp := limit-1;
+      tmp := limit;
     else
       tmp := input-1;
     end if;
