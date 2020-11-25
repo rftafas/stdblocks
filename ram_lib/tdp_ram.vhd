@@ -51,7 +51,7 @@ end tdp_ram;
 architecture behavioral of tdp_ram is
 
   constant ram_size_c : integer := 2**mem_size;
-  signal   ram_data_s : vector_array(ram_size_c-1 downto 0)(port_size-1 downto 0) := (others=>(others=>'0'));
+  signal   ram_data_s : std_logic_array(ram_size_c-1 downto 0)(port_size-1 downto 0) := (others=>(others=>'0'));
 
   constant ram_string : string := ram_type_dec(ram_type);
   attribute ram_style of ram_data_s : signal is ram_string;

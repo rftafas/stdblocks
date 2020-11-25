@@ -23,14 +23,11 @@ library stdblocks;
 entity resource_controller is
     generic (
       n_elements  : integer := 8;
-      n_resources : integer := 8;
-      mode        : integer := 0
+      n_resources : integer := 8
     );
     port (
-      --general
       clk_i      : in  std_logic;
       rst_i      : in  std_logic;
-      --python script port creation starts
       request_i  : in  std_logic_vector(n_elements-1 downto 0);
       ack_i      : in  std_logic_vector(n_elements-1 downto 0);
       grant_o    : out std_logic_vector(n_elements-1 downto 0);

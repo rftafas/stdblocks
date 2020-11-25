@@ -43,7 +43,7 @@ begin
             dout <= '0';
           end if;
         else
-          if reg_v < (reg_v'range => '1') then
+          if reg_v < unsigned'("11111") then
             reg_v := reg_v + 1;
           else
             dout <= '1';

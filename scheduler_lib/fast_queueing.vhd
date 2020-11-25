@@ -20,24 +20,23 @@ library expert;
 library stdblocks;
   use stdblocks.scheduler_lib.all;
 
-entity queueing is
+entity fast_queueing is
     generic (
       n_elements : positive := 8
     );
     port (
-      clk_i       : in  std_logic;
-      rst_i       : in  std_logic;
-      request_i    : in  std_logic_vector(n_elements-1 downto 0);
-      ack_i        : in  std_logic_vector(n_elements-1 downto 0);
-      grant_o      : out std_logic_vector(n_elements-1 downto 0);
-      index_o      : out natural
+      clk_i     : in  std_logic;
+      rst_i     : in  std_logic;
+      request_i : in  std_logic_vector(n_elements-1 downto 0);
+      ack_i     : in  std_logic_vector(n_elements-1 downto 0);
+      grant_o   : out std_logic_vector(n_elements-1 downto 0);
+      index_o   : out natural
     );
-end queueing;
+end fast_queueing;
 
-architecture behavioral of queueing is
+architecture behavioral of fast_queueing is
 
   signal index_sr         : integer_vector(n_elements-1 downto 0) := start_queue(n_elements);
-  signal moving_index_s   : natural := 0;
   signal priority_index_s : natural := 0;
 
 begin
@@ -46,28 +45,27 @@ begin
       -- priority is given to channels that are not trasmitting. this ensures no starvation.
       -- Packet order is lost.
       process(all)
+        variable locked : boolean := false;
       begin
         if rst_i = '1' then
           grant_o  <= (others=>'0');
           index_sr <= start_queue(n_elements);
-          moving_index_s <= n_elements-1;
         elsif rising_edge(clk_i) then
-          if grant_o(index_sr(moving_index_s)) = '1' then
-            if ack_i(index_sr(moving_index_s)) = '1' then
-              grant_o(index_sr(moving_index_s)) <= '0';
-              moving_index_s <= n_elements-1;
-              index_sr(moving_index_s downto 0) <= index_sr(moving_index_s downto 0) ror 1;
+          locked := false;
+          for j in n_elements-1 downto 0 loop
+            if grant_o(index_sr(j)) = '1' then
+              if ack_i(index_sr(j)) = '1' then
+                grant_o(index_sr(j)) <= '0';
+                index_sr(j downto 0) <= index_sr(j downto 0) ror 1;
+              end if;
+            elsif request_i(index_sr(j)) = '1' then
+              if grant_o = std_logic_vector'( grant_o'range => '0' ) and not locked then
+                locked := true;
+                grant_o(index_sr(j)) <= '1';
+                index_o              <= index_sr(j);
+              end if;
             end if;
-          elsif request_i(index_sr(moving_index_s)) = '1' then
-            if grant_o = std_logic_vector'( grant_o'range => '0' ) then
-              index_o <= index_sr(moving_index_s);
-              grant_o(index_sr(moving_index_s)) <= '1';
-            end if;
-          elsif moving_index_s = 0 then
-            moving_index_s <= n_elements-1;
-          else
-            moving_index_s<=moving_index_s-1;
-          end if;
+          end loop;
         end if;
       end process;
 

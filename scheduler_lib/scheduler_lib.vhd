@@ -32,6 +32,94 @@ package scheduler_lib is
 
   function start_queue ( input: integer ) return integer_vector;
 
+  component queueing
+    generic (
+      n_elements : integer := 8
+    );
+    port (
+      clk_i     : in  std_logic;
+      rst_i     : in  std_logic;
+      request_i : in  std_logic_vector(n_elements-1 downto 0);
+      ack_i     : in  std_logic_vector(n_elements-1 downto 0);
+      grant_o   : out std_logic_vector(n_elements-1 downto 0);
+      index_o   : out natural
+    );
+  end component queueing;
+
+  component fast_queueing
+    generic (
+      n_elements : integer := 8
+    );
+    port (
+      clk_i     : in  std_logic;
+      rst_i     : in  std_logic;
+      request_i : in  std_logic_vector(n_elements-1 downto 0);
+      ack_i     : in  std_logic_vector(n_elements-1 downto 0);
+      grant_o   : out std_logic_vector(n_elements-1 downto 0);
+      index_o   : out natural
+    );
+  end component fast_queueing;
+
+  component round_robin
+    generic (
+      n_elements : integer := 8
+    );
+    port (
+      clk_i     : in  std_logic;
+      rst_i     : in  std_logic;
+      request_i : in  std_logic_vector(n_elements-1 downto 0);
+      ack_i     : in  std_logic_vector(n_elements-1 downto 0);
+      grant_o   : out std_logic_vector(n_elements-1 downto 0);
+      index_o   : out natural
+    );
+  end component round_robin;
+
+  component round_robin_hard
+    generic (
+      n_elements : integer := 8
+    );
+    port (
+      clk_i     : in  std_logic;
+      rst_i     : in  std_logic;
+      request_i : in  std_logic_vector(n_elements-1 downto 0);
+      ack_i     : in  std_logic_vector(n_elements-1 downto 0);
+      grant_o   : out std_logic_vector(n_elements-1 downto 0);
+      index_o   : out natural
+    );
+  end component round_robin_hard;
+
+  component resource_controller
+    generic (
+      n_elements  : integer := 8;
+      n_resources : integer := 8;
+      mode        : integer := 0
+    );
+    port (
+      clk_i      : in  std_logic;
+      rst_i      : in  std_logic;
+      request_i  : in  std_logic_vector(n_elements-1 downto 0);
+      ack_i      : in  std_logic_vector(n_elements-1 downto 0);
+      grant_o    : out std_logic_vector(n_elements-1 downto 0);
+      resource_o : out integer_vector(n_elements-1 downto 0);
+      index_o    : out integer
+    );
+  end component resource_controller;
+
+  component fixed_priority
+    generic (
+      n_elements : integer := 8
+    );
+    port (
+      clk_i     : in  std_logic;
+      rst_i     : in  std_logic;
+      request_i : in  std_logic_vector(n_elements-1 downto 0);
+      ack_i     : in  std_logic_vector(n_elements-1 downto 0);
+      grant_o   : out std_logic_vector(n_elements-1 downto 0);
+      index_o   : out natural
+    );
+  end component fixed_priority;
+
+
 end package;
 
 package body scheduler_lib is
@@ -56,7 +144,7 @@ begin
     end if;
   else
     if input = 0 then
-      tmp := limit-1;
+      tmp := limit;
     else
       tmp := input-1;
     end if;
