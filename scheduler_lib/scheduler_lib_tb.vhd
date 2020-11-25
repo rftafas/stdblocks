@@ -26,163 +26,188 @@ library vunit_lib;
 
 
 entity scheduler_lib_tb is
-	generic (runner_cfg : string);
+	generic (
+		runner_cfg : string;
+		n_elements : integer := 8;
+		entity_sel : string
+	);
 end scheduler_lib_tb;
 
 architecture simulation of scheduler_lib_tb is
-	constant n_elements  : integer := 8;
-	constant mode        : integer := 0;
-  signal   clk_i       : std_logic := '0';
-	signal   rst_i       : std_logic := '1';
+	constant entity_padded : string(1 to 256) := string_padding(entity_sel,256);
+	constant mode          : integer := 0;
+  signal   clk_i         : std_logic := '0';
+	signal   rst_i         : std_logic := '1';
 
-	signal   fixed_request_i      : std_logic_vector(n_elements-1 downto 0);
-	signal   fixed_ack_i          : std_logic_vector(n_elements-1 downto 0);
-	signal   fixed_grant_o        : std_logic_vector(n_elements-1 downto 0);
-	signal   fixed_index_o        : natural;
-
-	signal   roundrobin_request_i : std_logic_vector(n_elements-1 downto 0);
-	signal   roundrobin_ack_i     : std_logic_vector(n_elements-1 downto 0);
-	signal   roundrobin_grant_o   : std_logic_vector(n_elements-1 downto 0);
-	signal   roundrobin_index_o   : natural;
-
-	signal   queueing_request_i   : std_logic_vector(n_elements-1 downto 0);
-	signal   queueing_ack_i       : std_logic_vector(n_elements-1 downto 0);
-	signal   queueing_grant_o     : std_logic_vector(n_elements-1 downto 0);
-	signal   queueing_index_o     : natural;
-
+	signal   request_i     : std_logic_vector(n_elements-1 downto 0);
+	signal   ack_i         : std_logic_vector(n_elements-1 downto 0);
+	signal   grant_o       : std_logic_vector(n_elements-1 downto 0);
+	signal   index_o       : natural;
+	signal   k_checkup     : integer;
 
 begin
 
 	clk_i <= not clk_i after 10 ns;
-	rst_i <= '1', '0' after 40 ns;
 
-		main : process
-			variable j : integer := n_elements-1;
-	  begin
-	    test_runner_setup(runner, runner_cfg);
+	main : process
+		variable j : integer := n_elements-1;
+  begin
+    test_runner_setup(runner, runner_cfg);
 
-			if rst_i = '1' then
-				fixed_request_i      <= (others=>'0');
-				fixed_ack_i          <= (others=>'0');
-				roundrobin_request_i <= (others=>'0');
-				roundrobin_ack_i     <= (others=>'0');
-				queueing_request_i   <= (others=>'0');
-				queueing_ack_i       <= (others=>'0');
-				j := n_elements-1;
-				wait until rst_i = '0';
+		rst_i     <= '1';
+		request_i <= (others=>'0');
+		ack_i     <= (others=>'0');
+		j         := n_elements-1;
+		wait until rising_edge(clk_i);
+		wait until rising_edge(clk_i);
+		rst_i     <= '0';
+
+		while test_suite loop
+			 if run("Sanity check for system.") then
+			 	report "System Sane. Begin tests.";
+			 	check_true(true, result("Sanity check for system."));
+
+			elsif run("Stand Still Test") then
+				for k in 0 to 100 loop
+					--do nothing. Obey the nine.
+					check_equal(index_o, 0, "Index Error.");
+					check_true(grant_o = (grant_o'range => '0'), "Provision Error.");
+				end loop;
+				check_passed("Stand Still Test Pass.");
+
+			elsif run("Sequential Test") then
+				for k in n_elements-1 downto 0 loop
+					request_i(k) <= '1';
+					wait until rising_edge(clk_i);
+					wait until grant_o(k) = '1';
+					wait until rising_edge(clk_i);
+					check_equal(index_o, k, "Index Error.");
+					wait until rising_edge(clk_i);
+					request_i(k) <= '0';
+					ack_i(k) <= '1';
+					wait until grant_o(k) = '0';
+					wait until rising_edge(clk_i);
+					ack_i(k) <= '0';
+				end loop;
+				check_passed("Fixed Priority: Sequential Test Pass.");
+
+			elsif run("All Request Test") then
+				request_i <= (others=>'1');
+				for k in n_elements-1 downto 0 loop
+					wait until rising_edge(clk_i);
+					while grant_o(k) /= '1' loop
+						wait for 1 ps;
+					end loop;
+					wait until rising_edge(clk_i);
+					check_equal(index_o, k, "Index Error.");
+					wait until rising_edge(clk_i);
+					request_i(k) <= '0';
+					ack_i(k) <= '1';
+					wait until grant_o(k) = '0';
+					wait until rising_edge(clk_i);
+					ack_i(k) <= '0';
+					wait until rising_edge(clk_i);
+				end loop;
+				check_passed("All Request Test");
+
+			elsif run("Persistent All Request Test") then
+				request_i <= (others=>'1');
+				for k in n_elements-1 downto 0 loop
+					exit when string_match(entity_sel,"fixed_priority"); --fixed priprity will always favor the highest channel.
+		 			wait until rising_edge(clk_i);
+					while grant_o(k) /= '1' loop
+						wait for 1 ps;
+					end loop;
+					wait until rising_edge(clk_i);
+					check_equal(index_o, k, "Index Error.");
+					wait until rising_edge(clk_i);
+					ack_i(k) <= '1';
+					wait until grant_o(k) = '0';
+					wait until rising_edge(clk_i);
+					ack_i(k)     <= '0';
+				end loop;
+				check_passed("Persistent All Request Test Pass.");
+
 			end if;
+		end loop;
+  	test_runner_cleanup(runner); -- Simulation ends here
+  end process;
 
-			while test_suite loop
-				 if run("Sanity check for system.") then
-				 	report "System Sane. Begin tests.";
-				 	check_true(true, result("Sanity check for system."));
+	test_runner_watchdog(runner, 2 us);
 
-				elsif run("Fixed Priority: Sequential Test") then
-					wait until rising_edge(clk_i);
-					fixed_request_i <= (others=>'1');
-					for k in n_elements-1 downto 0 loop
-						wait until fixed_grant_o(k) = '1';
-						wait until rising_edge(clk_i);
-						check_equal(fixed_index_o, k, "Index Error.");
-						wait until rising_edge(clk_i);
-						fixed_request_i(k) <= '0';
-						fixed_ack_i(k)     <= '1';
-						wait until fixed_grant_o(k) = '0';
-						exit when fixed_request_i = (fixed_request_i'range => '0');
-					end loop;
-					check_passed("Fixed Priority: Sequential Test Pass.");
+		dut_gen : case entity_padded generate
+			when string_padding("fixed_priority",256) =>
+				dut_u : fixed_priority
+					generic map (
+					  n_elements => n_elements
+					)
+					port map (
+					  clk_i     => clk_i,
+					  rst_i     => rst_i,
+					  request_i => request_i,
+					  ack_i     => ack_i,
+					  grant_o   => grant_o,
+					  index_o   => index_o
+					);
 
-				elsif run("Round Robin: Sequential Test") then
-					roundrobin_request_i <= (others=>'1');
-					while true loop
-						wait until roundrobin_grant_o /= (roundrobin_grant_o'range => '0');
-						check_equal(roundrobin_index_o, j, "Idex Error.");
-						wait until rising_edge(clk_i);
-						roundrobin_ack_i(j)     <= '1';
-						wait until roundrobin_grant_o(j) = '0';
-						wait until rising_edge(clk_i);
-						roundrobin_ack_i(j)     <= '0';
-						j := j-1;
-						exit when j = -1;
-					end loop;
-					j := 0;
-					check_passed("Queueing Sequential Test Pass.");
+			when string_padding("round_robin",256) =>
+				dut_u : round_robin
+					generic map (
+					  n_elements => n_elements
+					)
+					port map (
+					  clk_i     => clk_i,
+					  rst_i     => rst_i,
+					  request_i => request_i,
+					  ack_i     => ack_i,
+					  grant_o   => grant_o,
+					  index_o   => index_o
+					);
 
-				elsif run("Queueing 1: Sequential Test") then
-					while true loop
-			 			wait until rising_edge(clk_i);
-			 			queueing_request_i(j) <= '1';
-			 			wait until queueing_grant_o(j) = '1';
-						check_equal(queueing_index_o, j, "Idex Error.");
-						wait until rising_edge(clk_i);
-			 			queueing_request_i(j) <= '0';
-						queueing_ack_i(j)     <= '1';
-						--check_true(index_o = j, result(string_replace("Index %r is correct. Pass.",to_string(j))));
-						wait until queueing_grant_o(j) = '0';
-						wait until rising_edge(clk_i);
-						queueing_ack_i(j)     <= '0';
-						j := j-1;
-						exit when j = -1;
-					end loop;
-					j := 0;
-					check_passed("Queueing Sequential Test Pass.");
+			when string_padding("round_robin_hard",256) =>
+				dut_u : round_robin_hard
+					generic map (
+					  n_elements => n_elements
+					)
+					port map (
+					  clk_i     => clk_i,
+					  rst_i     => rst_i,
+					  request_i => request_i,
+					  ack_i     => ack_i,
+					  grant_o   => grant_o,
+					  index_o   => index_o
+					);
 
-				elsif run("Queueing 2: Sequential ACK Relief Test") then
-					wait until rising_edge(clk_i);
-					queueing_request_i <= (others=>'1');
-					while true loop
-						wait until queueing_grant_o /= (queueing_grant_o'range => '0');
-						check_equal(queueing_index_o, index_of_1(queueing_grant_o), "Index Error.");
-						j := index_of_1(queueing_grant_o);
-						wait until rising_edge(clk_i);
-						queueing_request_i(j) <= '0';
-						queueing_ack_i(j)     <= '1';
-						wait until queueing_grant_o(j) = '0';
-						exit when queueing_request_i = (queueing_request_i'range => '0');
-					end loop;
-					check_passed("Sequential ACK Relief Test Pass.");
-				end if;
-			end loop;
-    	test_runner_cleanup(runner); -- Simulation ends here
-	  end process;
+			when string_padding("queueing",256) =>
+				dut_u : queueing
+					generic map (
+					  n_elements => n_elements
+					)
+					port map (
+					  clk_i     => clk_i,
+					  rst_i     => rst_i,
+					  request_i => request_i,
+					  ack_i     => ack_i,
+					  grant_o   => grant_o,
+					  index_o   => index_o
+					);
 
-		fixed_priority_i : fixed_priority
-			generic map (
-			  n_elements => n_elements
-			)
-			port map (
-			  clk_i     => clk_i,
-			  rst_i     => rst_i,
-			  request_i => fixed_request_i,
-			  ack_i     => fixed_ack_i,
-			  grant_o   => fixed_grant_o,
-			  index_o   => fixed_index_o
-			);
+			when string_padding("fast_queueing",256) =>
+				dut_u : fast_queueing
+					generic map (
+					  n_elements => n_elements
+					)
+					port map (
+					  clk_i     => clk_i,
+					  rst_i     => rst_i,
+					  request_i => request_i,
+					  ack_i     => ack_i,
+					  grant_o   => grant_o,
+					  index_o   => index_o
+					);
 
-		round_robin_i : round_robin
-			generic map (
-			  n_elements => n_elements
-			)
-			port map (
-			  clk_i     => clk_i,
-			  rst_i     => rst_i,
-			  request_i => roundrobin_request_i,
-			  ack_i     => roundrobin_ack_i,
-			  grant_o   => roundrobin_grant_o,
-			  index_o   => roundrobin_index_o
-			);
+			when others =>
 
-		queueing_dut : queueing
-			generic map (
-			  n_elements => n_elements
-			)
-			port map (
-			  clk_i     => clk_i,
-			  rst_i     => rst_i,
-			  request_i => queueing_request_i,
-			  ack_i     => queueing_ack_i,
-			  grant_o   => queueing_grant_o,
-			  index_o   => queueing_index_o
-			);
+		end generate;
 
 end simulation;

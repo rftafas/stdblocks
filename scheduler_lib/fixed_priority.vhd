@@ -48,10 +48,9 @@ begin
         if ack_i(index) = '1' then
           grant_o <= (others=>'0');
         end if;
-      elsif request_i /= (request_i'range => '0') then
-        index          := index_of_1(request_i);
-        grant_o        <= (others=>'0');
-        grant_o(index) <= '1';
+      elsif grant_o = (grant_o'range => '0') then
+        index := index_of_1(request_i);
+        grant_o(index) <= request_i(index);
         index_o        <= index;
       end if;
     end if;

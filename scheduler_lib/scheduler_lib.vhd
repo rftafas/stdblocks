@@ -46,6 +46,20 @@ package scheduler_lib is
     );
   end component queueing;
 
+  component fast_queueing
+    generic (
+      n_elements : integer := 8
+    );
+    port (
+      clk_i     : in  std_logic;
+      rst_i     : in  std_logic;
+      request_i : in  std_logic_vector(n_elements-1 downto 0);
+      ack_i     : in  std_logic_vector(n_elements-1 downto 0);
+      grant_o   : out std_logic_vector(n_elements-1 downto 0);
+      index_o   : out natural
+    );
+  end component fast_queueing;
+
   component round_robin
     generic (
       n_elements : integer := 8

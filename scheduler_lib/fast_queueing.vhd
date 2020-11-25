@@ -20,7 +20,7 @@ library expert;
 library stdblocks;
   use stdblocks.scheduler_lib.all;
 
-entity queueing is
+entity fast_queueing is
     generic (
       n_elements : positive := 8
     );
@@ -32,9 +32,9 @@ entity queueing is
       grant_o   : out std_logic_vector(n_elements-1 downto 0);
       index_o   : out natural
     );
-end queueing;
+end fast_queueing;
 
-architecture behavioral of queueing is
+architecture behavioral of fast_queueing is
 
   signal index_sr         : integer_vector(n_elements-1 downto 0) := start_queue(n_elements);
   signal priority_index_s : natural := 0;
@@ -51,15 +51,16 @@ begin
           grant_o  <= (others=>'0');
           index_sr <= start_queue(n_elements);
         elsif rising_edge(clk_i) then
-          for j in 0 to n_elements-1 loop
+          locked := false;
+          for j in n_elements-1 downto 0 loop
             if grant_o(index_sr(j)) = '1' then
               if ack_i(index_sr(j)) = '1' then
                 grant_o(index_sr(j)) <= '0';
-                index_sr(j downto 0) <= index_sr(j downto 0) rol 1;
+                index_sr(j downto 0) <= index_sr(j downto 0) ror 1;
               end if;
             elsif request_i(index_sr(j)) = '1' then
-              if grant_o = std_logic_vector'( grant_o'range => '0' ) then
-                grant_o              <= (others=>'0');
+              if grant_o = std_logic_vector'( grant_o'range => '0' ) and not locked then
+                locked := true;
                 grant_o(index_sr(j)) <= '1';
                 index_o              <= index_sr(j);
               end if;

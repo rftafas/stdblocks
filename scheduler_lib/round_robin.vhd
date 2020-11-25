@@ -46,6 +46,7 @@ begin
   begin
     if rst_i = '1' then
       grant_o        <= (others=>'0');
+      index_o        <= 0;
       moving_index_s <= n_elements-1;
     elsif rising_edge(clk_i) then
       if grant_o(moving_index_s) = '1' then --we test VHDL2008 hability to read out ports.
@@ -55,15 +56,15 @@ begin
         end if;
       elsif request_i(moving_index_s) = '1' then
         if grant_o = std_logic_vector'( grant_o'range => '0' ) then
-          grant_v                 := (others=>'0');
-          grant_v(moving_index_s) := '1';
-          grant_o <= grant_v;
+          grant_o                 <= (others=>'0');
+          grant_o(moving_index_s) <= '1';
+          index_o                 <= moving_index_s;
         end if;
       else
         moving_index_s <= integer_count(moving_index_s,n_elements-1,false);
       end if;
     end if;
   end process;
-  index_o <= moving_index_s;
+
 
 end behavioral;

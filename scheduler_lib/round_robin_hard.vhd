@@ -37,7 +37,6 @@ end round_robin_hard;
 architecture behavioral of round_robin_hard is
 
   signal moving_index_s   : natural := 0;
-  signal priority_index_s : natural := 0;
 
 begin
 
