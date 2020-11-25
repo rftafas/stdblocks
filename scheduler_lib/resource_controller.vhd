@@ -23,8 +23,7 @@ library stdblocks;
 entity resource_controller is
     generic (
       n_elements  : integer := 8;
-      n_resources : integer := 8;
-      mode        : integer := 0
+      n_resources : integer := 8
     );
     port (
       clk_i      : in  std_logic;
