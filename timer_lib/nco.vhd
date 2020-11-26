@@ -28,7 +28,7 @@ entity nco is
       Resolution_hz   : frequency :=  20  Hz;
       use_scaler      : boolean   :=   false;
       adjustable_freq : boolean   :=   false;
-      NCO_size_c      : natural := 16
+      NCO_size_c      : natural   :=   16
     );
     port (
       rst_i     : in  std_logic;

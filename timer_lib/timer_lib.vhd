@@ -71,7 +71,7 @@ package timer_lib is
 	      Resolution_hz   : frequency :=  20  Hz;
 	      use_scaler      : boolean   :=   false;
 	      adjustable_freq : boolean   :=   false;
-	      NCO_size_c      : natural := 16
+	      NCO_size_c      : natural   :=  16
 	    );
 	    port (
 	      rst_i     : in  std_logic;
@@ -138,9 +138,10 @@ package timer_lib is
 
 	component adpll is
 	  generic (
-	    Fref_hz       : real := 100000000.0000;
-	    Fout_hz       : real :=   1000000.0000;
-	    Resolution_hz : real :=        20.0000
+	    Fref_hz       : frequency := 100 MHz;
+	    Fout_hz       : frequency :=  10 MHz;
+	    Resolution_hz : frequency :=  20  Hz;
+			Bandwidth_hz  : frequency := 500 kHz
 	  );
 	  port (
 	    rst_i    : in  std_logic;
@@ -185,7 +186,7 @@ package body timer_lib is
 		if adustable then
 			res_tmp  := to_real(res);
 			fref_tmp := to_real(fref);
-			return integer(ceil(log2(fref_tmp/res_tmp)));
+			return integer(ceil(log2(res_tmp/fref_tmp)));
 		else
 			return fixed_size;
 		end if;
@@ -198,7 +199,7 @@ package body timer_lib is
 	begin
 		fout_tmp := to_real(Fout);
 		fref_tmp := to_real(fref);
-		size_tmp := real(2**size);
+		size_tmp := 2.0000 ** real(size);
 		return integer(fout_tmp*size_tmp/fref_tmp);
 	end increment_value_calc;
 
