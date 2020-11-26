@@ -205,6 +205,9 @@ begin
 					);
 
 			when others =>
+				assert false
+					report "Invalid Entity Selection."
+					severity failure;
 
 		end generate;
 
