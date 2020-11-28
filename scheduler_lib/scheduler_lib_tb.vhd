@@ -50,14 +50,12 @@ begin
 	clk_i <= not clk_i after 10 ns;
 
 	main : process
-		variable j : integer := n_elements-1;
   begin
     test_runner_setup(runner, runner_cfg);
 
 		rst_i     <= '1';
 		request_i <= (others=>'0');
 		ack_i     <= (others=>'0');
-		j         := n_elements-1;
 		wait until rising_edge(clk_i);
 		wait until rising_edge(clk_i);
 		rst_i     <= '0';
@@ -207,6 +205,9 @@ begin
 					);
 
 			when others =>
+				assert false
+					report "Invalid Entity Selection."
+					severity failure;
 
 		end generate;
 

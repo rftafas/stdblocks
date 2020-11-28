@@ -26,9 +26,10 @@ library stdblocks;
 
 entity adpll is
   generic (
-    Fref_hz       : frequency := 100 MHz;
-    Fout_hz       : frequency :=  10 MHz;
-    Resolution_hz : frequency :=  20  Hz
+    Fref_hz       : real := 100.0000e+6;
+    Fout_hz       : real :=  10.0000e+6;
+    Bandwidth_hz  : real := 500.0000e+3;
+    Resolution_hz : real :=  20.0000
   );
   port (
     rst_i    : in  std_logic;
@@ -41,6 +42,9 @@ end adpll;
 architecture behavioral of adpll is
 
   constant nco_size_c : integer := nco_size_calc(Fref_hz,Resolution_hz,true,0);
+  constant start_c    : integer := increment_value_calc(Fref_hz,Fout_hz,nco_size_c);
+  constant upper_c    : integer := increment_value_calc(Fref_hz,Fout_hz+Bandwidth_hz,nco_size_c);
+  constant lower_c    : integer := increment_value_calc(Fref_hz,Fout_hz-Bandwidth_hz,nco_size_c);
 
   signal clkout_s  : std_logic;
   signal clkout_en : std_logic;
@@ -48,9 +52,7 @@ architecture behavioral of adpll is
   signal up_s      : std_logic;
   signal down_s    : std_logic;
 
-  signal all1_c    : std_logic_vector(nco_size_c-1 downto 0) := (others=>'1');
-  signal all0_c    : std_logic_vector(nco_size_c-1 downto 0) := (others=>'0');
-  signal n_value_s : std_logic_vector(nco_size_c-1 downto 0) := (others=>'0');
+  signal n_value_s : std_logic_vector(nco_size_c-1 downto 0) := to_std_logic_vector(start_c,nco_size_c);
 
 begin
 
@@ -58,26 +60,22 @@ begin
   control_p : process(all)
   begin
     if rst_i = '1' then
+      n_value_s <= to_std_logic_vector(start_c,nco_size_c);
     elsif mclk_i = '1' and mclk_i'event then
       if up_s then
-        if n_value_s /= all1_c then
+        if n_value_s /= upper_c then
           n_value_s <= n_value_s + 1;
         end if;
       elsif down_s then
-        if n_value_s /= all0_c then
+        if n_value_s /= lower_c then
           n_value_s <= n_value_s - 1;
         end if;
       end if;
     end if;
   end process;
 
-  nco_u : nco
+  nco_u : nco_int
       generic map (
-        Fref_hz         => Fref_hz,
-        Fout_hz         => Fout_hz,
-        Resolution_hz   => Resolution_hz,
-        use_scaler      => false,
-        adjustable_freq => true,
         NCO_size_c      => nco_size_c
       )
       port map (
