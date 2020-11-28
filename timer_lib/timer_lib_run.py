@@ -11,8 +11,18 @@ except:
 entities_list = (
     "pwm",
     "nco",
-    "adpll"
+    "adpll",
+    "long_counter",
+    "precise_long_counter"
 )
+
+period_list = {
+    "pwm"   : 50,
+    "nco"   : 50,
+    "adpll" : 50,
+    "long_counter" : 40960,
+    "precise_long_counter" : 50000
+}
 
 root = dirname(__file__)
 
@@ -31,8 +41,12 @@ test_tb.scan_tests_from_file(join(root, "timer_lib_tb.vhd"))
 
 for entity in entities_list:
     test_tb.add_config(
-        name=entity,
-        generics=dict(entity_sel=entity)
+        name = entity,
+        generics = dict(
+            entity_sel = entity,
+            run_time   = 600,
+            period     = period_list[entity]
+        )
     )
 
 vu.main()

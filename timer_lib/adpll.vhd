@@ -26,10 +26,10 @@ library stdblocks;
 
 entity adpll is
   generic (
-    Fref_hz       : frequency := 100 MHz;
-    Fout_hz       : frequency :=  10 MHz;
-    Bandwidth_hz  : frequency := 500 kHz;
-    Resolution_hz : frequency :=  20  Hz
+    Fref_hz       : real := 100.0000e+6;
+    Fout_hz       : real :=  10.0000e+6;
+    Bandwidth_hz  : real := 500.0000e+3;
+    Resolution_hz : real :=  20.0000
   );
   port (
     rst_i    : in  std_logic;

@@ -21,21 +21,21 @@ library stdblocks;
 
 entity long_counter is
   generic (
-    Fref_hz : frequency := 100 MHz;
-    Period  : time      :=  10 sec;
-    sr_size : integer   :=  32
+    Fref_hz : real    := 100.0000e+6;
+    Period  : real    :=  10.0000;
+    sr_size : integer :=  32
   );
   port (
     rst_i       : in  std_logic;
     mclk_i      : in  std_logic;
     enable_i    : in  std_logic;
-    enable_o    : out std_logic
+    clkout_o    : out std_logic
   );
 end long_counter;
 
 architecture behavioral of long_counter is
 
-  constant sr_number : integer := cell_num_calc(Period,Fref_hz,sr_size);
+  constant sr_number : integer := cell_num_calc(Period/2.000,Fref_hz,sr_size);
   signal   sr_en     : std_logic_vector(sr_number-1 downto 0) := (others=>'0');
   signal   out_en    : std_logic_vector(sr_number-1 downto 0) := (others=>'0');
 
@@ -60,6 +60,19 @@ begin
     sr_en(j) <= out_en(j-1);
   end generate;
 
-  enable_o <= out_en(sr_number-1);
+  process(all)
+  begin
+    if rst_i = '1' then
+      clkout_o <= '0';
+    elsif rising_edge(mclk_i) then
+      if out_en(sr_number-1) = '1' then
+        if clkout_o = '0' then
+          clkout_o <= '1';
+        else
+          clkout_o <= '0';
+        end if;
+      end if;
+    end if;
+  end process;
 
 end behavioral;

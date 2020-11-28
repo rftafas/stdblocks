@@ -18,23 +18,24 @@ library ieee;
 	use IEEE.math_real.all;
 library expert;
   use expert.std_logic_expert.all;
+	use expert.std_string.all;
 library stdblocks;
   use stdblocks.timer_lib.all;
 
 entity nco is
     generic (
-      Fref_hz         : frequency := 100 MHz;
-      Fout_hz         : frequency :=  10 MHz;
-      Resolution_hz   : frequency :=  20  Hz;
-      use_scaler      : boolean   :=   false;
-      adjustable_freq : boolean   :=   false;
-      NCO_size_c      : natural   :=   16
+      Fref_hz         : real    := 100.0000e+6;
+      Fout_hz         : real    :=  10.0000e+6;
+      Resolution_hz   : real    :=  20.0000;
+      use_scaler      : boolean :=   false;
+      adjustable_freq : boolean :=   false;
+      NCO_size_c      : natural :=   16
     );
     port (
       rst_i     : in  std_logic;
       mclk_i    : in  std_logic;
       scaler_i  : in  std_logic;
-      n_value_i : in  std_logic_vector;
+      n_value_i : in  std_logic_vector(NCO_size_c-1 downto 0);
       clkout_o  : out std_logic
     );
 end nco;
@@ -48,6 +49,10 @@ architecture behavioral of nco is
   signal   nco_s           : unsigned(internal_size_c-1 downto 0) := (others=>'0');
 
 begin
+
+  assert NCO_size_c >= internal_size_c
+    report string_replace("Minimum value for NCO_size_c is %r.",to_string(internal_size_c))
+    severity failure;
 
   nvalue_gen : if adjustable_freq generate
     nvalue_p : process(mclk_i, rst_i)

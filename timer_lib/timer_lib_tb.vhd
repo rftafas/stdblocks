@@ -28,24 +28,29 @@ entity timer_lib_tb is
   generic (
 		runner_cfg : string;
 		entity_sel : string;
-    run_time   : time := 100 us
+    run_time   : integer;
+    period     : integer
 	);
 end timer_lib_tb;
 
 architecture behavioral of timer_lib_tb is
 
-  constant clk_period_c  : time := 10 ns;
   constant entity_padded : string(1 to 256) := string_padding(entity_sel,256);
-  constant Fref_hz       : frequency := 100 MHz;
-  constant Fout_hz       : frequency :=  10 MHz;
-  constant Resolution_hz : frequency :=  20  Hz;
-  constant Bandwidth_hz  : frequency := 500 kHz;
+  constant run_time_c    : time := run_time * 1 us;
+  constant period_c      : time := period   * 1 ns;
 
-  constant PWM_size    : integer := 8;
+  constant Fref_hz       : real := 100.0000e+6;
+  constant clk_period_c  : time :=  10 ns;
+  constant Fout_hz       : real :=  10.0000e+6;
+  constant Resolution_hz : real :=  20.0000;
+  constant Bandwidth_hz  : real := 500.0000e+3;
+
+  --PWM
+  constant threshold_c : std_logic_vector(7 downto 0) := to_std_logic_vector(5,8) - 1;
+
   signal   rst_i       : std_logic;
   signal   clk_i       : std_logic := '0';
   signal   clkin_s     : std_logic := '0';
-  signal   threshold_c : std_logic_vector(PWM_size-1 downto 0) := to_std_logic_vector(5,PWM_size) - 1;
   signal   gen_clk_s   : std_logic;
 
 begin
@@ -64,8 +69,9 @@ begin
 
     while test_suite loop
       if run("Free running simulation") then
-        report "Will run for " & to_string(run_time);
-        wait for run_time;
+        report "Will run for " & to_string(run_time_c);
+        report to_string(period_c);
+        wait for run_time_c;
         check_true(true, result("Free running finished."));
 
       elsif run("Check Period") then
@@ -73,15 +79,17 @@ begin
         wait until gen_clk_s = '0';
         for j in 0 to 99 loop
           wait until gen_clk_s = '1';
-          wait for 5 * clk_period_c;
+          wait for period_c;
           --note: the signal has not yet transitioned.
           --this will happen on next simulation cycle.
           check_equal(gen_clk_s,'1',"Period Test Pass.");
           --note: we align the date again.
           wait until gen_clk_s = '0';
-          wait for 5 * clk_period_c;
+          wait for period_c;
           --same as above, it has not yet changed.
           check_equal(gen_clk_s,'0',"Period Test Pass.");
+          exit when string_match("long_counter",entity_sel);
+          exit when string_match("precise_long_counter",entity_sel);
         end loop;
 
       end if;
@@ -91,15 +99,15 @@ begin
   end process;
 
   --watchdog depends on the entity being tested.
-	test_runner_watchdog(runner, run_time+1 us);
+  test_runner_watchdog(runner, run_time_c + 1 us );
 
   dut_gen : case entity_padded generate
     when string_padding("pwm",256) =>
-      pwm_i : pwm
+      pwm_u : pwm
         generic map (
           Fref_hz  => Fref_hz,
           Fout_hz  => Fout_hz,
-          PWM_size => PWM_size
+          PWM_size => 8
         )
         port map (
           rst_i       => rst_i,
@@ -109,7 +117,7 @@ begin
         );
 
     when string_padding("nco",256) =>
-      nco_i : nco
+      nco_u : nco
         generic map (
           Fref_hz         => Fref_hz,
           Fout_hz         => Fout_hz,
@@ -127,7 +135,7 @@ begin
         );
 
     when string_padding("adpll",256) =>
-      adpll_i : adpll
+      adpll_u : adpll
         generic map (
           Fref_hz       => Fref_hz,
           Fout_hz       => Fout_hz,
@@ -138,6 +146,34 @@ begin
           rst_i    => rst_i,
           mclk_i   => clk_i,
           clkin_i  => clkin_s,
+          clkout_o => gen_clk_s
+        );
+
+    when string_padding("long_counter",256) =>
+      long_counter_u : long_counter
+        generic map (
+          fref_hz => Fref_hz,
+          period  => 100.0000e-6,
+          sr_size => 16
+        )
+        port map (
+          rst_i    => rst_i,
+          mclk_i   => clk_i,
+          enable_i => '1',
+          clkout_o => gen_clk_s
+        );
+
+    when string_padding("precise_long_counter",256) =>
+      precise_long_counter_u : precise_long_counter
+        generic map (
+          fref_hz => fref_hz,
+          period  => 100.0000e-6,
+          sr_size => 8
+        )
+        port map (
+          rst_i    => rst_i,
+          mclk_i   => clk_i,
+          enable_i => '1',
           clkout_o => gen_clk_s
         );
 
