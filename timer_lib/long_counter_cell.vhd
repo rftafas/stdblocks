@@ -39,7 +39,8 @@ begin
   begin
     if mclk_i = '1' and mclk_i'event then
       if enable_i = '1' then
-        timer_sr <= timer_sr sll 1;
+        timer_sr    <= timer_sr sll 1;
+        timer_sr(0) <= timer_sr(sr_size-1);
       end if;
     end if;
   end process;

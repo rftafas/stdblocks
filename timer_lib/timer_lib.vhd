@@ -31,47 +31,42 @@ package timer_lib is
 	function to_real ( input :      time ) return real;
 
 	function nco_size_calc (
-		res  : frequency;
-		Fref : frequency;
-		adustable : boolean;
+		Fref       : real;
+		res        : real;
+		adustable  : boolean;
 		fixed_size : integer
 	) return integer;
 
 	function increment_value_calc (
-		Fref : frequency;
-		Fout : frequency;
+		Fref : real;
+		Fout : real;
 		size : integer
 	) return integer;
 
-	function timer_valid_check (period : time; Fref : frequency ) return boolean;
+	function timer_valid_check (period : real; Fref : real ) return boolean;
+	function time_check (cell_size : integer; cell_num : integer; Fref : real ) return real;
 
 	function cell_num_calc (
-		period : time;
-		Fref : frequency;
+		period    : real;
+		Fref      : real;
 		cell_size : integer
 	) return integer;
 
-	function cell_num_calc2 (
-		period : time;
-		Fref : frequency;
-		s_value : real
-	) return integer;
-
 	function rem_counter_limit (
-		period : time;
-		Fref : frequency;
+		period    : real;
+		Fref      : real;
 		cell_size : integer;
-		cell_num : integer
+		cell_num  : integer
 	) return integer;
 
 	component nco is
 	    generic (
-	      Fref_hz         : frequency := 100 MHz;
-	      Fout_hz         : frequency :=  10 MHz;
-	      Resolution_hz   : frequency :=  20  Hz;
-	      use_scaler      : boolean   :=   false;
-	      adjustable_freq : boolean   :=   false;
-	      NCO_size_c      : natural := 16
+	      Fref_hz         : real    := 100.0000e6;
+	      Fout_hz         : real    :=  10.0000e6;
+	      Resolution_hz   : real    :=  20.0000;
+	      use_scaler      : boolean :=  false;
+	      adjustable_freq : boolean :=  false;
+	      NCO_size_c      : natural :=  16
 	    );
 	    port (
 	      rst_i     : in  std_logic;
@@ -84,9 +79,9 @@ package timer_lib is
 
 	component pwm is
 	  generic (
-			Fref_hz  : frequency := 100 MHz;
-			Fout_hz  : frequency :=  10 MHz;
-	    PWM_size : integer   :=  16
+			Fref_hz  : real     := 100.0000e6;
+			Fout_hz  : real    :=   10.0000e6;
+	    PWM_size : integer :=   16
 	  );
 	  port (
 	    rst_i       : in  std_logic;
@@ -98,15 +93,15 @@ package timer_lib is
 
 	component long_counter is
 	  generic (
-			Fref_hz  : frequency := 100 MHz;
-	    Tout_s  : time      :=  10 sec;
-	    sr_size : integer   :=  32
+			fref_hz : real    := 100.0000e6;
+	    period  : real    :=  10.0000;
+	    sr_size : integer :=  32
 	  );
 	  port (
 	    rst_i       : in  std_logic;
 	    mclk_i      : in  std_logic;
 	    enable_i    : in  std_logic;
-	    enable_o    : out std_logic
+	    clkout_o    : out std_logic
 	  );
 	end component;
 
@@ -115,32 +110,33 @@ package timer_lib is
 	    sr_size : integer   :=  32
 	  );
 	  port (
-	    rst_i       : in  std_logic;
-	    mclk_i      : in  std_logic;
-	    enable_i    : in  std_logic;
-	    enable_o    : out std_logic
+	    rst_i    : in  std_logic;
+	    mclk_i   : in  std_logic;
+	    enable_i : in  std_logic;
+	    enable_o : out std_logic
 	  );
 	end component;
 
 	component precise_long_counter is
 	  generic (
-	    Fref_hz : frequency := 100 MHz;
-	    Tout_s  : time      :=  10 sec;
-	    sr_size : integer   :=  32
+	    fref_hz : real    := 100.0000e6;
+	    period  : real    :=  10.0000;
+	    sr_size : integer :=  32
 	  );
 	  port (
-	    rst_i       : in  std_logic;
-	    mclk_i      : in  std_logic;
-	    enable_i    : in  std_logic;
-	    enable_o    : out std_logic
+	    rst_i    : in  std_logic;
+	    mclk_i   : in  std_logic;
+	    enable_i : in  std_logic;
+	    clkout_o : out std_logic
 	  );
 	end component;
 
 	component adpll is
 	  generic (
-	    Fref_hz       : real := 100000000.0000;
-	    Fout_hz       : real :=   1000000.0000;
-	    Resolution_hz : real :=        20.0000
+			Fref_hz       : real := 100.0000e+6;
+	    Fout_hz       : real :=  10.0000e+6;
+	    Bandwidth_hz  : real := 500.0000e+3;
+	    Resolution_hz : real :=  20.0000
 	  );
 	  port (
 	    rst_i    : in  std_logic;
@@ -173,77 +169,79 @@ package body timer_lib is
 		return real(input / 1 hz);
 	end to_real;
 
-	function to_real ( input :      time ) return real is
+	function to_real ( input : time ) return real is
+		variable norm : time;
+		variable corr : real;
 	begin
-		return real(input / 1 sec);
+		if input > 1 sec then
+			norm := 1 sec;
+			corr := 1.0000;
+		elsif input > 1 ms then
+			norm := 1 ms;
+			corr := 1.0000e-3;
+		elsif input > 1 us then
+			norm := 1 us;
+			corr := 1.0000e-6;
+		elsif input > 1 ns then
+			norm := 1 ns;
+			corr := 1.0000e-9;
+		else
+			norm := 1 ps;
+			corr := 1.0000e-12;
+		end if;
+		return real( input / norm ) * corr;
 	end to_real;
 
-	function nco_size_calc (res : frequency; Fref : frequency; adustable : boolean; fixed_size : integer) return integer is
-		variable res_tmp  : real;
-		variable fref_tmp : real;
+	function nco_size_calc (Fref : real; res : real; adustable : boolean; fixed_size : integer) return integer is
 	begin
 		if adustable then
-			res_tmp  := to_real(res);
-			fref_tmp := to_real(fref);
-			return integer(ceil(log2(fref_tmp/res_tmp)));
+			return integer(ceil(log2(Fref/res)));
 		else
 			return fixed_size;
 		end if;
 	end nco_size_calc;
 
-	function increment_value_calc (Fref : frequency; Fout : frequency; size : integer ) return integer is
-		variable fout_tmp : real;
-		variable fref_tmp : real;
-		variable size_tmp : real;
+	function increment_value_calc (Fref : real; Fout : real; size : integer ) return integer is
 	begin
-		fout_tmp := to_real(Fout);
-		fref_tmp := to_real(fref);
-		size_tmp := real(2**size);
-		return integer(fout_tmp*size_tmp/fref_tmp);
+		return integer(Fout*(2.000**size)/Fref);
 	end increment_value_calc;
 
 --------------------------------------------------------------------------------------------------------
 -- LONG COUNTER CALCULATIONS
 --------------------------------------------------------------------------------------------------------
-	function timer_valid_check (period : time; Fref : frequency ) return boolean is
-		variable period_tmp : real;
-		variable fref_tmp   : real;
+	function timer_valid_check (period : real; Fref : real ) return boolean is
 		variable tmp        : real;
 	begin
-		period_tmp    := to_real(period);
-		Fref_tmp      := to_real(Fref);
-		tmp           := (Fref_tmp*period_tmp);
+		tmp := Fref*period;
 		if tmp >= 1000.0000 then
 			return true;
 		end if;
 		return false;
 	end timer_valid_check;
 
-	function cell_num_calc (period : time; Fref : frequency; cell_size : integer) return integer is
-		variable X_tmp         : real;
-		variable fref_tmp      : real;
-		variable cell_size_tmp : real;
+	function time_check (cell_size : integer; cell_num : integer; Fref : real ) return real is
+		variable tmp : real;
 	begin
-		X_tmp         := log2(to_real(period)*to_real(Fref));
-		cell_size_tmp := real(cell_size);
-		return integer(X_tmp/log2(cell_size_tmp));
+		tmp := real(cell_size**cell_num);
+		tmp := tmp / Fref;
+		return tmp;
+	end time_check;
+
+	function cell_num_calc (period : real; Fref : real; cell_size : integer) return integer is
+		variable tmp : real;
+		variable int : integer;
+	begin
+		tmp := real(cell_size);
+		tmp := log2(period*Fref)/log2(tmp);
+		int := integer(tmp);
+		report "Will use as reference " & to_string(time_check(cell_size,int,Fref)) & " seconds.";
+		return int;
 	end cell_num_calc;
 
-	function cell_num_calc2 (period : time; Fref : frequency; s_value : real) return integer is
-		variable X_tmp  : real;
-	begin
-		X_tmp := log2(to_real(period)*to_real(Fref));
-		return integer(X_tmp / s_value - 1.0000);
-	end cell_num_calc2;
-
-	function rem_counter_limit (period : time; Fref : frequency; cell_size : integer; cell_num : integer) return integer is
-		variable period_tmp    : real;
-		variable fref_tmp      : real;
+	function rem_counter_limit (period : real; Fref : real; cell_size : integer; cell_num : integer) return integer is
 		variable tmp           : real;
 	begin
-		period_tmp    := to_real(period);
-		Fref_tmp      := to_real(Fref);
-		tmp           := (period_tmp*fref_tmp) - real(cell_size**(cell_num+1));
+		tmp           := (period*Fref) - real(cell_size**(cell_num+1));
 		return integer(tmp);
 	end rem_counter_limit;
 
