@@ -23,28 +23,28 @@ end vhls_lib_tb;
 
 architecture behavioral of vhls_lib_tb is
 
---  --we have to define some static stuff for procedures to save.
---  -- we use records ans inside them, store as many stuff as possible.
- type arit_t is record
-   input_1 : integer;
-   input_2 : integer;
-   result  : integer;
- end record arit_t;
+  --we have to define some static stuff for procedures to save.
+  --we use records ans inside them, store as many stuff as possible.
+   type arit_t is record
+     input_1 : integer;
+     input_2 : integer;
+     result  : integer;
+   end record arit_t;
 
---  --we have to declare a signal on the format of the handler.
- signal artit_runner_s : arit_t := (
-   input_1 => 0,
-   input_2 => 0,
-   result  => 0
- );
+  --we have to declare a signal on the format of the handler.
+   signal artit_runner_s : arit_t := (
+     input_1 => 0,
+     input_2 => 0,
+     result  => 0
+   );
 
---First, we write as many procedures we want.
---We will have the status because we can do it several ways.
-procedure add_one ( signal add_io : inout arit_t; status : out procedure_status_t) is
-begin
-  add_io.result <= add_io.input_1 + 1;
-  status := PROC_DONE; --single cycle action.
-end add_one;
+  --First, we write as many procedures we want.
+  --We will have the status because we can do it several ways.
+  procedure add_one ( signal add_io : inout arit_t; status : out procedure_status_t) is
+  begin
+    add_io.result <= add_io.input_1 + 1;
+    status := PROC_DONE; --single cycle action.
+  end add_one;
 
   procedure add_two ( signal add_io : inout arit_t; status : out procedure_status_t) is
   begin
@@ -58,25 +58,24 @@ end add_one;
    status := PROC_DONE; --single cycle action.
  end set_to_one;
 
-
  --declare the runners. We must create one runner for each procedure.
  procedure run1 is new run
    generic map (
-     process_name => "NOME",
+     process_name => "PROC1",
      my_procedure_handler_t => arit_t,
      my_procedure => add_one
    );
 
  procedure run2 is new run
    generic map (
-     process_name => "NOM2",
+     process_name => "PROC2",
      my_procedure_handler_t => arit_t,
      my_procedure => add_two
    );
 
  procedure run3 is new run
    generic map (
-     process_name => "NOM3",
+     process_name => "PROC3",
      my_procedure_handler_t => arit_t,
      my_procedure => set_to_one
    );
