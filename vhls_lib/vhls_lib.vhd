@@ -18,8 +18,8 @@ library expert;
     use expert.std_string.all;
 
 package vhls_lib is
+  
   type procedure_status_t is ( BUSY, READY, DONE, PERROR);
-
 
   constant max_proc_name : positive := 256;
   constant max_proc_list : positive := 256;
@@ -32,6 +32,7 @@ package vhls_lib is
     procedure_status : procedure_status_t;
     total_procedures : natural;
   end record runner_t;
+
   constant runner_start : runner_t := (
     current_process  => 0,
     procedure_list   => (others=>(others=>nul)),
