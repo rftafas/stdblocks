@@ -15,8 +15,10 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
+library expert;
+	use expert.std_string.all;
 library stdblocks;
-    use stdblocks.vhls_lib.all;
+   use stdblocks.vhls_lib.all;
 library vunit_lib;
 	context vunit_lib.vunit_context;
 
@@ -47,13 +49,13 @@ architecture behavioral of vhls_lib_tb is
   --We will have the status because we can do it several ways.
   procedure add_one ( signal add_io : inout arit_t; status : out procedure_status_t) is
   begin
-    add_io.result <= add_io.input_1 + 1;
+    add_io.result <= add_io.result + 1;
     status := DONE; --single cycle action.
   end add_one;
 
   procedure add_two ( signal add_io : inout arit_t; status : out procedure_status_t) is
   begin
-    add_io.result <= add_io.input_1 + 2;
+    add_io.result <= add_io.result + 2;
     status := DONE; --single cycle action.
   end add_two;
 
@@ -68,28 +70,30 @@ architecture behavioral of vhls_lib_tb is
    generic map (
      process_name => "PROC1",
      my_procedure_handler_t => arit_t,
-     my_procedure => add_one
+     my_procedure => set_to_one
    );
 
  procedure run2 is new stdblocks.vhls_lib.run
    generic map (
      process_name => "PROC2",
      my_procedure_handler_t => arit_t,
-     my_procedure => add_two
+     my_procedure => add_one
    );
 
  procedure run3 is new stdblocks.vhls_lib.run
    generic map (
      process_name => "PROC3",
      my_procedure_handler_t => arit_t,
-     my_procedure => set_to_one
+     my_procedure => add_two
    );
+
+   signal runner_s : handler_t := runner_start;
+   signal counter : integer := 0;
 
 begin
 
   --using a runner: will run according set sequence.
-  process
-    variable runner_v : runner_t := runner_start;
+  main : process
   begin
     test_runner_setup(runner, runner_cfg);
 
@@ -100,7 +104,19 @@ begin
         check_true(true, result("Free running finished."));
       end if;
     end loop;
+    test_runner_cleanup(runner);
+  end process;
 
+  aux : process
+    variable runner_v : handler_t := runner_start;
+  begin
+    scheduler_procedure(runner_v);
+    run1(runner_v,artit_runner_s);
+    run2(runner_v,artit_runner_s);
+    run3(runner_v,artit_runner_s);
+    counter  <= counter + 1;
+    runner_s <= runner_v;
+    wait for 20 ns;
   end process;
 
 end behavioral;
