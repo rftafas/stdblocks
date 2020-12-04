@@ -19,22 +19,19 @@ library expert;
 	use expert.std_string.all;
 library stdblocks;
    use stdblocks.vhls_lib.all;
-library vunit_lib;
-	context vunit_lib.vunit_context;
 
-entity vhls_lib_tb is
-  generic (
-    runner_cfg : string
+entity vhls_lib_synth is
+  port (
+    rst_i      : in  std_logic;
+    clk_i      : in  std_logic;
+    counter1_o : out integer;
+    counter2_o : out integer;
+    sequence_o : out integer
   );
-end vhls_lib_tb;
+end vhls_lib_synth;
 
-architecture behavioral of vhls_lib_tb is
+architecture behavioral of vhls_lib_synth is
 
-  signal clk_s : std_logic := '0';
-  signal rst_s : std_logic := '0';
-
-  --we have to define some static stuff for procedures to save.
-  --we use records ans inside them, store as many stuff as possible.
    type counter_t is record
      value  : integer;
    end record counter_t;
@@ -141,43 +138,15 @@ architecture behavioral of vhls_lib_tb is
 
 begin
 
-  dummy : process
-  begin
-      wait;
-  end process;
-
-  --using a runner: will run according set sequence.
-  main : process
-  begin
-    test_runner_setup(runner, runner_cfg);
-
-    rst_s <= '1';
-    wait until rising_edge(clk_s);
-    wait until rising_edge(clk_s);
-    rst_s <= '0';
-
-    while test_suite loop
-      if run("Free running simulation") then
-        report "Will run for 1 us";
-        wait for 1 us;
-        check_true(true, result("Free running finished."));
-      end if;
-    end loop;
-    test_runner_cleanup(runner);
-  end process;
-
-
-  clk_s <= not clk_s after 10 ns;
-
   --this process is an example of a counter.
   --at each clock cycle just one of these functions is active.
   --It shows how to do things sequentially.
-  counter_p : process(clk_s, rst_s)
+  counter_p : process(all)
     variable runner_v : handler_t := runner_start;
   begin
-    if rst_s = '1' then
+    if rst_i = '1' then
       counter_s.value <= 0;
-    elsif rising_edge(clk_s) then
+    elsif rising_edge(clk_i) then
       scheduler_procedure(runner_v);
       run1(runner_v,counter_s);
       run2(runner_v,counter_s);
@@ -185,26 +154,29 @@ begin
     end if;
   end process;
 
+  counter1_o <= counter_s.value;
+
   --this process is an example of a sequence generator.
   --It basically has the same function as process above,
   --it shows that same runner may be used more than once.
-  sequence_p : process(clk_s, rst_s)
+  sequence_p : process(all)
     variable runner_v : handler_t := runner_start;
   begin
-    if rst_s = '1' then
+    if rst_i = '1' then
       sequence_s.value <= 0;
-    elsif rising_edge(clk_s) then
+    elsif rising_edge(clk_i) then
       scheduler_procedure(runner_v);
       run1(runner_v,sequence_s);
       run4(runner_v,sequence_s);
       run5(runner_v,sequence_s);
     end if;
   end process;
+  sequence_o <= sequence_s.value;
 
   -- this is an example of a procedure that has a variable as
   -- handler. It is useful to be used with memory elements.
   -- Also, to avoid aditional cycles between them, both are runv.
-  shift_p : process(clk_s, rst_s)
+  shift_p : process(all)
     variable runner_v  : handler_t := runner_start;
     variable counter_v : counter_t := (
       value => 0
@@ -214,14 +186,15 @@ begin
       q => 0
     );
   begin
-    if rst_s = '1' then
-    elsif rising_edge(clk_s) then
+    if rst_i = '1' then
+    elsif rising_edge(clk_i) then
       --scheduler_procedure(runner_v);
       run6(runner_v,ffd_v);
       counter_v.value := ffd_v.q;
       --scheduler_procedure(runner_v);
       run7(runner_v,counter_v);
-      ffd_v.d := counter_v.value;
+      ffd_v.d    := counter_v.value;
+      counter2_o <= counter_v.value;
     end if;
   end process;
 

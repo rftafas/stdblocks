@@ -33,6 +33,8 @@ package vhls_lib is
     total_procedures : natural;
   end record handler_t;
 
+  type pipeline_handler_t is array (NATURAL RANGE <> ) of handler_t;
+
   constant runner_start : handler_t := (
     current_process  => 0,
     procedure_list   => (others=>(others=>nul)),
@@ -49,6 +51,17 @@ package vhls_lib is
     parameter (
       runner : inout handler_t;
       signal my_procedure_data : inout my_procedure_handler_t
+    );
+
+  procedure runv
+    generic (
+      process_name : string;
+      type          my_procedure_handler_t;
+      procedure     my_procedure(my_procedure_data : inout my_procedure_handler_t; my_status : out procedure_status_t)
+    )
+    parameter (
+      runner            : inout handler_t;
+      my_procedure_data : inout my_procedure_handler_t
     );
 
     procedure add_procedure(runner : inout handler_t; procname : in string);
@@ -76,6 +89,27 @@ package body vhls_lib is
     add_procedure(runner,process_name);
     if proc_name_tmp = runner.procedure_list(runner.current_process) then
       my_procedure(my_procedure_data,runner.procedure_status);
+    end if;
+  end procedure;
+
+  procedure runv
+    generic (
+      process_name : string;
+      type          my_procedure_handler_t;
+      procedure     my_procedure(my_procedure_data : inout my_procedure_handler_t; my_status : out procedure_status_t)
+    )
+    parameter (
+      runner            : inout handler_t;
+      my_procedure_data : inout my_procedure_handler_t
+    ) is
+      variable proc_name_tmp : string(1 to max_proc_name) := (others => nul);
+  begin
+    proc_name_tmp := string_padding(process_name,max_proc_name);
+    runner := runner;
+    add_procedure(runner,process_name);
+    if proc_name_tmp = runner.procedure_list(runner.current_process) then
+      my_procedure(my_procedure_data,runner.procedure_status);
+      scheduler_procedure(runner);
     end if;
   end procedure;
 
