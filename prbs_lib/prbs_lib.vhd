@@ -19,7 +19,7 @@ library IEEE;
 library expert;
   use expert.std_logic_expert.all;
 
-package prbs_pkg is
+package prbs_lib is
 
 	constant MAX_PRBS : integer := 31;
 
@@ -38,9 +38,9 @@ package prbs_pkg is
 	function prbs_xor (
 		prbs_sr : std_logic_vector; prbs_order : integer ) return std_logic;
 
-	procedure prbs_shift ( prbs : inout prbs_handler_t);
+	procedure prbs_shift ( prbs : inout prbs_handler_t; data_o : out std_logic );
 
-	procedure prbs_run ( prbs : inout prbs_handler_t; data_o : out std_logic_vector );
+	procedure prbs_shift ( prbs : inout prbs_handler_t; data_o : out std_logic_vector );
 
 	procedure add_scramble (
 		prbs   : inout prbs_handler_t;
@@ -48,11 +48,11 @@ package prbs_pkg is
 		data_o : out   std_logic
 	);
 
-	procedure add_scramble (
+	procedure add_scramble ( 
 		prbs   : inout prbs_handler_t;
-		data_i : in    std_logic_vector;
-		data_o : out   std_logic_vector
-	 );
+		data_i : in std_logic_vector;
+		data_o : out std_logic_vector
+	);
 
 	procedure mult_scramble (
 		prbs   : inout prbs_handler_t;
@@ -66,22 +66,22 @@ package prbs_pkg is
 		data_o : out   std_logic_vector
 	 );
 
-end prbs_pkg;
+end prbs_lib;
 
-package body prbs_pkg is
+package body prbs_lib is
 
 	type prbs_t is protected body
-		variable prbs : prbs_handler_t (
-			regs  => (others=>'1')
-			order => 0
+		variable prbs : prbs_handler_t := (
+			regs  => (others=>'1'),
+			order => 1
 		);
-		variable check : prbs_handler_t (
-			regs  => (others=>'1')
-			order => 0
+		variable check : prbs_handler_t := (
+			regs  => (others=>'1'),
+			order => 1
 		);
-		variable sync : prbs_handler_t (
-			regs  => (others=>'1')
-			order => 0
+		variable sync : prbs_handler_t := (
+			regs  => (others=>'1'),
+			order => 1
 		);
 
 		variable seed : std_logic_vector(MAX_PRBS downto 1) := (others=>'1');
@@ -89,7 +89,7 @@ package body prbs_pkg is
 		impure function get_data ( input : positive ) return std_logic_vector is
 			variable result_tmp : std_logic_vector(input-1 downto 0);
 		begin
-			prbs_run(prbs,result_tmp)
+			prbs_shift(prbs,result_tmp);
 			return result_tmp;
 		end function;
 
@@ -100,12 +100,12 @@ package body prbs_pkg is
 			if result_tmp = input then
 				return true;
 			end if;
-			report "Lost PRBS Sequence. Expected: " + to_string(result_tmp) + " / got: " + to_string(input);
+			report "Lost PRBS Sequence. Expected: " & to_string(result_tmp) & " / got: " & to_string(input);
 			return false;
 		end function;
 
 		impure function check_sync ( input : std_logic_vector ) return boolean is
-			variable data_tmp : std_logic_vector(input'range)
+			variable data_tmp : std_logic_vector(input'range);
 		begin
 			mult_scramble(sync,input,data_tmp);
 			if data_tmp = (input'range => '0') then
@@ -115,15 +115,17 @@ package body prbs_pkg is
 		end function;
 
 		impure function set_seed ( input : std_logic_vector ) return boolean is
+		begin
 			assert input'length = seed'length
-				report "Seed must have " + to_string(MAX_PRBS+1) + "bits of length."
+				report "Seed must have " & to_string(MAX_PRBS+1) & "bits of length."
 				severity failure;
 
 			seed := input;
-			
+			return true;
 		end function;
 
 		impure function set_order ( input : positive ) return boolean is
+		begin
 			prbs.order  := input;
 			check.order := input;
 			sync.order  := input;
@@ -165,7 +167,7 @@ package body prbs_pkg is
 			when 31 =>
 				return prbs_tmp(31) xor prbs_tmp(28);
 			when others =>
-				report "Unimplemented PRBS size. Please, a valid value. Output is 0."
+				report "Unimplemented PRBS size. Please, a valid value. Output is 0.";
 				return '0';
 		end case;
 	end prbs_xor;
@@ -177,21 +179,21 @@ package body prbs_pkg is
 		prbs.order := prbs.order;
 	end prbs_shift;
 
-	procedure prbs_run ( prbs : inout prbs_handler_t; data_o : out std_logic_vector ) is
+	procedure prbs_shift ( prbs : inout prbs_handler_t; data_o : out std_logic_vector ) is
 	begin
 		for j in data_o'range loop
 			prbs_shift( prbs, data_o(j) );
 		end loop;
-	end prbs_run;
+	end prbs_shift;
 
 	procedure mult_scramble ( prbs : inout prbs_handler_t; data_i : in std_logic; data_o : out std_logic ) is
 	begin
 		prbs_shift( prbs, data_o);
 		prbs.regs(1) := prbs.regs(1) xor data_i;
-		data_o :=  prbs.regs(1)
-	end scramble;
+		data_o :=  prbs.regs(1);
+	end mult_scramble;
 
-	procedure mult_scramble ( prbs_sr : prbs_handler_t; data_i : std_logic_vector; data_o : out std_logic ) is
+	procedure mult_scramble ( prbs : inout prbs_handler_t; data_i : in std_logic_vector; data_o : out std_logic_vector ) is
 	begin
 		assert data_i'length = data_o'length
 			report "Error mult_scramble(): Additive Scrambler requires input and output vector of same size."
@@ -200,17 +202,17 @@ package body prbs_pkg is
 		for j in data_i'range loop
 			mult_scramble(prbs,data_i(j),data_o(j));
 		end loop;
-	end scramble;
+	end mult_scramble;
 
-	procedure add_scramble ( prbs_sr : inout prbs_handler_t; data_i : in std_logic; data_o : out std_logic ) is
-		variable prbs_tmp : std_logic_vector(prbs_sr'length downto 1);
+	procedure add_scramble ( prbs : inout prbs_handler_t; data_i : in std_logic; data_o : out std_logic ) is
+		variable prbs_tmp : std_logic_vector(MAX_PRBS downto 1);
 		variable tmp  : std_logic;
 	begin
 		prbs_shift(prbs,tmp);
 		data_o := tmp xor data_i;
-	end scramble;
+	end add_scramble;
 
-	procedure add_scramble ( prbs_sr : prbs_handler_t; data_i : std_logic_vector; data_o : out std_logic ) is
+	procedure add_scramble ( prbs : inout prbs_handler_t; data_i : in std_logic_vector; data_o : out std_logic_vector ) is
 	begin
 		assert data_i'length = data_o'length
 			report "Error add_scramble(): Additive Scrambler requires input and output vector of same size."
@@ -219,6 +221,6 @@ package body prbs_pkg is
 		for j in data_i'range loop
 			add_scramble(prbs,data_i(j),data_o(j));
 		end loop;
-	end scramble;
+	end add_scramble;
 
-end prbs_pkg;
+end prbs_lib;
