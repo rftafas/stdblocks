@@ -53,10 +53,10 @@ architecture behavioral of fifo_lib_tb is
 
 begin
 
-  rst_i  <= '1', '0' after 40 ns;
+  rst_i <= '1', '0' after 40 ns;
   clk_i <= not clk_i after 10 ns;
 
-  rstb_i  <= '1', '0' after 120 ns;
+  rstb_i <= '1', '0' after 120 ns;
   clkb_i <= not clkb_i after 20 ns;
 
 

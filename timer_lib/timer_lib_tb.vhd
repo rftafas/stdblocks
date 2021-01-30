@@ -70,7 +70,6 @@ begin
     while test_suite loop
       if run("Free running simulation") then
         report "Will run for " & to_string(run_time_c);
-        report to_string(period_c);
         wait for run_time_c;
         check_true(true, result("Free running finished."));
 
