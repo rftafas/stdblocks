@@ -24,7 +24,7 @@ library stdblocks;
 
 entity stdfifo2ck is
     generic (
-      ram_type  : fifo_t := blockram;
+      ram_type  : fifo_t  := blockram;
       fifo_size : integer := 8;
       port_size : integer := 8
     );
@@ -92,8 +92,6 @@ begin
              ena_i;
 
   input_p : process(clka_i, rsta_i)
-    variable addri_v : std_logic_vector(addri_cnt'range);
-    variable addro_v : std_logic_vector(addro_cnt'range);
   begin
     if rsta_i = '1' then
       addri_cnt     <= (others=>'0');
@@ -102,9 +100,7 @@ begin
       if ena_i_s = '1' then
         addri_cnt    <= addri_cnt + 1;
       end if;
-      addri_v       := to_std_logic_vector(addri_cnt);
-      addro_v       := to_std_logic_vector(addro_cnt_s);
-      input_fifo_mq <= async_state(ena_i,enb_up_s,addri_v,addro_v,input_fifo_mq);
+      async_input_state(ena_i,addri_cnt,addro_cnt,input_fifo_mq);
     end if;
   end process;
 
@@ -128,13 +124,10 @@ begin
 
   enb_i_s <= '0'      when output_fifo_mq = underflow_st else
              '1'      when output_fifo_mq = f_empty_st   else
-             '0'      when output_fifo_mq = t_empty_st   else
              '0'      when output_fifo_mq = empty_st     else
              enb_i;
 
   output_p : process(clkb_i, rstb_i)
-    variable addri_v : std_logic_vector(addri_cnt'range);
-    variable addro_v : std_logic_vector(addro_cnt'range);
   begin
     if rstb_i = '1' then
       addro_cnt      <= (others=>'0');
@@ -143,9 +136,7 @@ begin
       if enb_i_s = '1' then
         addro_cnt    <= addro_cnt + 1;
       end if;
-      addri_v := to_std_logic_vector(addri_cnt_s);
-      addro_v := to_std_logic_vector(addro_cnt);
-      output_fifo_mq <= async_state(ena_up_s,enb_i,addri_v,addro_v,output_fifo_mq);
+      async_output_state(enb_i,addri_cnt,addro_cnt,output_fifo_mq);
     end if;
   end process;
 

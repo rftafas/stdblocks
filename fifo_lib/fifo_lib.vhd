@@ -18,6 +18,7 @@ library IEEE;
   use IEEE.math_real.all;
 library expert;
   use expert.std_logic_expert.all;
+  use expert.std_logic_gray.all;
 library stdblocks;
     use stdblocks.ram_lib.all;
 
@@ -41,9 +42,19 @@ package fifo_lib is
     ien : std_logic; oen : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
   ) return fifo_state_t;
 
-  function async_state (
-    ien : std_logic; oen : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
-  ) return fifo_state_t;
+  procedure async_input_state (
+    signal ien   : in    std_logic;
+    signal iaddr : in    gray_vector;
+    signal oaddr : in    gray_vector;
+    signal state : inout fifo_state_t
+  );
+
+  procedure async_output_state (
+    signal oen   : in    std_logic;
+    signal iaddr : in    gray_vector;
+    signal oaddr : in    gray_vector;
+    signal state : inout fifo_state_t 
+  );
 
   function fifo_status_f(mq_input : fifo_state_t) return fifo_status;
 
@@ -228,78 +239,58 @@ package body fifo_lib is
     return tmp;
 	end sync_state;
 
-  function async_state (
-    ien : std_logic; oen : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
-  ) return fifo_state_t is
-    variable tmp         : fifo_state_t := steady_st;
+  procedure async_input_state (
+      signal ien   : in    std_logic;
+      signal iaddr : in    gray_vector;
+      signal oaddr : in    gray_vector;
+      signal state : inout fifo_state_t
+  ) is
+    variable tmp         : fifo_state_t := empty_st;
     variable delta       : unsigned(iaddr'range) := (others=>'0');
-    variable up          : std_logic             := '0';
-    variable dn          : std_logic             := '0';
     variable fifo_length : integer               := 2**iaddr'length;
   begin
-    tmp   := current_state;
-    delta := unsigned(iaddr - oaddr);
-    up := ien and not oen;
-    dn := oen and not ien;
+    tmp   := state;
+    delta := to_unsigned(iaddr) - to_unsigned(oaddr);
 
-		case current_state is
-
-      when underflow_st =>
-        if delta = fifo_length/4 then
-          tmp:= steady_st;
-        end if;
+		case state is
 
       when empty_st =>
-        if dn = '1' then
-          tmp := underflow_st;
-        elsif up = '1' then
-          tmp:= f_empty_st;
-        end if;
-
-      when f_empty_st =>
         if delta > 1 then
           tmp:= goempty_st;
-        else
-          tmp:= t_empty_st;
-        end if;
-
-      when t_empty_st =>
-        if delta > 1 then
-          tmp:= goempty_st;
-        elsif dn = '1' then
-          tmp := empty_st;
         end if;
 
       when goempty_st =>
-        if delta = 1 and dn = '1' then
-          tmp := t_empty_st;
-        elsif delta >= fifo_length/4 then
+        if delta > fifo_length/4 then
           tmp:= steady_st;
+        elsif delta = 0 then
+          tmp := empty_st;
         end if;
 
       when steady_st =>
-        if delta    <   fifo_length/4 then
-          tmp := goempty_st;
-        elsif delta >= 3*fifo_length/4 then
+        if delta < fifo_length/4 then
+          tmp:= goempty_st;
+        elsif delta < 3*fifo_length/4 then
+          tmp := steady_st;
+        else
           tmp:= gofull_st;
         end if;
 
       when gofull_st =>
-        if delta = fifo_length-1 and up = '1' then
+        if delta < 3*fifo_length/4 then
+          tmp := steady_st;
+        elsif delta = fifo_length-1 and ien = '1' then
           tmp:= full_st;
-        elsif delta < 3*fifo_length/4 then
-          tmp :=  steady_st;
         end if;
 
       when full_st =>
-        if up = '1' then
+        if ien = '1' then
           tmp :=  overflow_st;
         elsif delta = fifo_length - 1 then
           tmp := gofull_st;
         end if;
 
       when overflow_st =>
-        if delta = 3*fifo_length/4-1 then
+        if delta < 3*fifo_length/4 then
           tmp :=  steady_st;
         end if;
 
@@ -307,8 +298,82 @@ package body fifo_lib is
         tmp := steady_st;
 
     end case;
-    return tmp;
-	end async_state;
+    state <= tmp;
+	end async_input_state;
+
+  procedure async_output_state (
+    signal oen   : in    std_logic;
+    signal iaddr : in    gray_vector;
+    signal oaddr : in    gray_vector;
+    signal state : inout fifo_state_t
+) is
+    variable tmp         : fifo_state_t := steady_st;
+    variable delta       : unsigned(iaddr'range) := (others=>'0');
+    variable fifo_length : integer               := 2**iaddr'length;
+  begin
+    tmp   := state;
+    delta := to_unsigned(iaddr) - to_unsigned(oaddr);
+
+		case state is
+
+      when underflow_st =>
+        if delta > fifo_length/4 then
+          tmp := steady_st;
+        end if;
+
+      when empty_st =>
+        if oen = '1' then
+          tmp:= underflow_st;
+        elsif delta = 1 then
+          tmp:= f_empty_st;
+        end if;
+
+      when f_empty_st =>
+        tmp := goempty_st;
+
+      when t_empty_st =>
+        if oen = '1' then
+          tmp := empty_st;
+        elsif delta = 1 then
+          tmp := goempty_st;
+        end if;
+
+
+      when goempty_st =>
+        if delta > fifo_length/4 then
+          tmp:= steady_st;
+        elsif delta = 1 and oen = '1' then
+          tmp := t_empty_st;
+        end if;
+
+      when steady_st =>
+        if delta > 3*fifo_length/4 then
+          tmp := gofull_st;
+        elsif delta    >   fifo_length/4 then
+          tmp := steady_st;
+        else
+          tmp:= goempty_st;
+        end if;
+
+      when gofull_st =>
+        if delta = 0 then
+          tmp:= full_st;  
+        elsif delta < 3*fifo_length/4 then
+            tmp := steady_st;
+        end if;
+
+      when full_st =>
+        if delta = fifo_length - 1 then
+          tmp := gofull_st;
+        end if;
+
+      when others =>
+        tmp := steady_st;
+
+    end case;
+    state <= tmp;
+	end async_output_state;
+
 
   function fifo_status_f(mq_input : fifo_state_t) return fifo_status is
     variable tmp : fifo_status;

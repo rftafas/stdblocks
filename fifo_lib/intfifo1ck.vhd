@@ -104,7 +104,7 @@ begin
     if rst_i = '1' then
       fifo_mq <= empty_st;
     elsif clk_i'event and clk_i = '1' then
-      fifo_mq <= async_state(ena_i,enb_i,addri_cnt,addro_cnt,fifo_mq);
+      fifo_mq <= sync_state(ena_i,enb_i,addri_cnt,addro_cnt,fifo_mq);
     end if;
   end process;
 

@@ -27,6 +27,8 @@ package prbs_lib is
 		impure function get_data ( input : positive ) return std_logic_vector;
 		impure function check_data ( input : std_logic_vector ) return boolean;
 		impure function check_sync ( input : std_logic_vector ) return boolean;
+		impure function set_seed   ( input : std_logic_vector ) return boolean;
+		impure function set_order  ( input : positive         ) return boolean;
 		impure function reset return boolean;
 	end protected prbs_t;
 
@@ -73,15 +75,15 @@ package body prbs_lib is
 	type prbs_t is protected body
 		variable prbs : prbs_handler_t := (
 			regs  => (others=>'1'),
-			order => 1
+			order => 23
 		);
 		variable check : prbs_handler_t := (
 			regs  => (others=>'1'),
-			order => 1
+			order => 23
 		);
 		variable sync : prbs_handler_t := (
 			regs  => (others=>'1'),
-			order => 1
+			order => 23
 		);
 
 		variable seed : std_logic_vector(MAX_PRBS downto 1) := (others=>'1');
