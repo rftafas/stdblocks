@@ -27,9 +27,9 @@ package prbs_lib is
 		impure function get_data ( input : positive ) return std_logic_vector;
 		impure function check_data ( input : std_logic_vector ) return boolean;
 		impure function check_sync ( input : std_logic_vector ) return boolean;
-		impure function set_seed   ( input : std_logic_vector ) return boolean;
-		impure function set_order  ( input : positive         ) return boolean;
-		impure function reset return boolean;
+		procedure set_seed   ( input : std_logic_vector );
+		procedure set_order  ( input : positive         );
+		procedure reset;
 	end protected prbs_t;
 
 	type prbs_handler_t is record
@@ -116,31 +116,39 @@ package body prbs_lib is
 			return false;
 		end function;
 
-		impure function set_seed ( input : std_logic_vector ) return boolean is
+		procedure set_seed ( input : std_logic_vector ) is
+			variable tmp : std_logic_vector(input'length downto 1);
 		begin
-			assert input'length = seed'length
-				report "Seed must have " & to_string(MAX_PRBS+1) & "bits of length."
-				severity failure;
+			assert input'length < MAX_PRBS
+				report "Seed size is " & to_string(input'length) & " bits. Maximum size is " & to_string(MAX_PRBS) & " bits of length. Discarding upper bits."
+				severity note;
+			
+			assert input'length > MAX_PRBS
+				report "Seed size is " & to_string(input'length) & " bits. Minimum size is " & to_string(MAX_PRBS) & " bits of length. Filling with '1' remaining bits."
+				severity note;
 
-			seed := input;
-			return true;
-		end function;
+			tmp := input;
+			if input'length >= seed'length then
+				seed := tmp(seed'range);
+			else
+				seed := (tmp'range => tmp, others=>'1');
+			end if;
+		end procedure;
 
-		impure function set_order ( input : positive ) return boolean is
+		procedure set_order ( input : positive ) is
 		begin
 			prbs.order  := input;
 			check.order := input;
 			sync.order  := input;
-			return true;
-		end function;
 
-		impure function reset return boolean is
+		end procedure;
+
+		procedure reset is
 		begin
 			prbs.regs  := seed;
 			check.regs := seed;
 			sync.regs  := seed;
-			return true;
-		end function;
+		end procedure;
 
 	end protected body prbs_t;
 
