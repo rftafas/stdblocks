@@ -33,61 +33,53 @@ end pulse_align;
 architecture behavioral of pulse_align is
 
   --for the future: include attributes for false path.
-  type align_t is (idle, wait_others, active);
+  type align_t is (idle, wait_others, active, wait_restart);
   type fsm_vector_t is array (en_i'range) of align_t;
   signal mq_align : fsm_vector_t;
 
-  function next_state_logic (
-    enable        : std_logic;
-    status        : std_logic_vector(en_i'range);
-    current_state : align_t
-    ) return align_t is
-
-      variable tmp : align_t;
+  procedure next_state_logic (
+    signal enable        : in    std_logic_vector;
+    signal fsm_mq        : inout fsm_vector_t
+  ) is
+    variable tmp : align_t;
   begin
-    tmp := current_state;
-    case current_state is
-        when idle        =>
-          if enable = '1' then
-            tmp :=  wait_others;
-          end if;
+    for j in en_i'range loop
+      tmp := fsm_mq(j);
+      case tmp is
+          when idle        =>
+            if enable(j) = '1' then
+              tmp :=  wait_others;
+            end if;
 
         when wait_others =>
-          if status = (status'range => '1') then
-            tmp :=  active;
-          end if;
+          tmp := active;
+          for j in fsm_mq'range loop
+            if fsm_mq(j) /= wait_others then
+              tmp :=  wait_others;
+            end if;
+          end loop;
 
         when others      =>
-          if enable = '0' then
+          if enable(j) = '0' then
             tmp := idle;
           end if;
 
       end case;
+      fsm_mq(j) <= tmp;
+    end loop;
+  end procedure;
+
+  function decode_out( fsm_mq : fsm_vector_t ) return std_logic_vector is
+    variable tmp : std_logic_vector(en_i'range);
+    begin
+      for j in en_i'range loop
+        if fsm_mq(j) = active then
+          tmp(j) := '1';
+        else
+          tmp(j) := '0';
+        end if;
+      end loop;
       return tmp;
-  end function;
-
-  function decode_status( current_state : align_t ) return std_logic is
-    begin
-      case current_state is
-        when wait_others =>
-          return '1';
-
-        when others      =>
-          return '0';
-
-      end case;
-  end function;
-
-  function decode_out( current_state : align_t ) return std_logic is
-    begin
-      case current_state is
-        when active =>
-          return '1';
-
-        when others =>
-          return '0';
-
-      end case;
   end function;
 
 begin
@@ -98,17 +90,10 @@ begin
     if rst_i = '1' then
       mq_align <= (others=>idle);
     elsif rising_edge(mclk_i) then
-      for j in en_i'range loop
-        status_v(j) := decode_status(mq_align(j));
-      end loop;
-      for j in en_i'range loop
-        mq_align(j) <= next_state_logic(en_i(j), status_v, mq_align(j));
-      end loop;
+      next_state_logic(en_i, mq_align);
     end if;
   end process;
 
-  out_gen : for j in en_i'range generate
-    en_o(j)        <= decode_out(mq_align(j));
-  end generate;
+  en_o <= decode_out(mq_align);
 
 end behavioral;
