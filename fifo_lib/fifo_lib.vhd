@@ -183,20 +183,13 @@ package body fifo_lib is
       when f_empty_st =>
         if up = '1' then
           tmp:= goempty_st;
-        else
-          tmp:= t_empty_st;
-        end if;
-
-      when t_empty_st =>
-        if dn  = '1' then
-          tmp := empty_st;
-        elsif up = '1' then
-          tmp:= goempty_st;
+        elsif dn = '1' then
+          tmp:= empty_st;
         end if;
 
       when goempty_st =>
         if delta = 1 and dn  = '1' then
-          tmp := t_empty_st;
+          tmp := f_empty_st;
         elsif delta = fifo_length/4 then
           tmp:= steady_st;
         end if;
@@ -398,7 +391,7 @@ package body fifo_lib is
     elsif mq_input = underflow_st then
       tmp.underflow := '1';
     elsif mq_input = f_empty_st then
-      tmp.empty     := '1';
+      tmp.goempty   := '1';
     else
       tmp.goempty   := '1';
     end if;

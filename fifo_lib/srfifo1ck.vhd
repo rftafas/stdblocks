@@ -70,11 +70,10 @@ begin
   output_p : process(clk_i, rst_i)
   begin
     if rst_i = '1' then
-      addro_cnt <= (others=>'1');
+      addro_cnt <= (others=>'0');
     elsif clk_i'event and clk_i = '1' then
       if ena_i = '1' and enb_i = '0' then
         if fifo_mq  = empty_st then
-          addro_cnt <= addro_cnt + 1;
         elsif addro_cnt < fifo_length then
           addro_cnt <= addro_cnt + 1;
         end if;
