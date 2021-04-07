@@ -129,6 +129,7 @@ begin
           rst_i     => rst_i,
           mclk_i    => clk_i,
           scaler_i  => '1',
+          sync_i    => '0',
           n_value_i => (15 downto 0 => '0'),
           clkout_o  => gen_clk_s
         );

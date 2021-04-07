@@ -57,9 +57,9 @@ begin
     end if;
   end process;
 
-  dout_o <= '1' when ( da_i   and db_i = '1' ) else
-            '1' when ( da_tmp and db_i = '1' ) else
-            '1' when ( db_tmp and da_i = '1' ) else
+  dout_o <= '1' when ( da_i   and db_i ) = '1' else
+            '1' when ( da_tmp and db_i ) = '1' else
+            '1' when ( db_tmp and da_i ) = '1' else
             '0';
 
 end behavioral;

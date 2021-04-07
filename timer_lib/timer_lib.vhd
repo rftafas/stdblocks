@@ -70,6 +70,7 @@ package timer_lib is
 	      rst_i     : in  std_logic;
 	      mclk_i    : in  std_logic;
 	      scaler_i  : in  std_logic;
+		  sync_i    : in  std_logic;
 	      n_value_i : in  std_logic_vector;
 	      clkout_o  : out std_logic
 	    );
@@ -152,6 +153,7 @@ package timer_lib is
       rst_i     : in  std_logic;
       mclk_i    : in  std_logic;
       scaler_i  : in  std_logic;
+      sync_i    : in  std_logic;
       n_value_i : in  std_logic_vector(NCO_size_c-1 downto 0);
       clkout_o  : out std_logic
     );

@@ -82,6 +82,7 @@ begin
         rst_i     => rst_i,
         mclk_i    => mclk_i,
         scaler_i  => '1',
+        sync_i    => '0',
         n_value_i => n_value_s,
         clkout_o  => clkout_s
       );
