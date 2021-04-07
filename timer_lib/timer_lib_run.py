@@ -29,7 +29,7 @@ root = dirname(__file__)
 vu = VUnit.from_argv()
 
 expert = vu.add_library("expert")
-expert.add_source_files(join(root, "../../stdexpert/src/*.vhd"))
+expert.add_source_files(join(root, "../libraries/stdexpert/src/*.vhd"))
 
 lib = vu.add_library("stdblocks")
 lib.add_source_files(join(root, "../sync_lib/*.vhd"))

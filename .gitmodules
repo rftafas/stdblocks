@@ -1,0 +1,3 @@
+[submodule "libraries/stdexpert"]
+	path = libraries/stdexpert
+	url = git@github.com:rftafas/stdexpert.git
