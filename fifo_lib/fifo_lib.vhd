@@ -390,8 +390,6 @@ package body fifo_lib is
       tmp.empty     := '1';
     elsif mq_input = underflow_st then
       tmp.underflow := '1';
-    elsif mq_input = f_empty_st then
-      tmp.goempty   := '1';
     else
       tmp.goempty   := '1';
     end if;

@@ -41,7 +41,7 @@ end adpll;
 
 architecture behavioral of adpll is
 
-  constant nco_size_c : integer := nco_size_calc(Fref_hz,Resolution_hz,true,0);
+  constant nco_size_c : integer := nco_size_calc(Fref_hz,Resolution_hz);
   constant start_c    : integer := increment_value_calc(Fref_hz,Fout_hz,nco_size_c);
   constant upper_c    : integer := increment_value_calc(Fref_hz,Fout_hz+Bandwidth_hz,nco_size_c);
   constant lower_c    : integer := increment_value_calc(Fref_hz,Fout_hz-Bandwidth_hz,nco_size_c);

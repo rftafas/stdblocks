@@ -56,7 +56,15 @@ begin
             if ack_i(index_sr(moving_index_s)) = '1' then
               grant_o(index_sr(moving_index_s)) <= '0';
               moving_index_s <= n_elements-1;
-              index_sr(moving_index_s downto 0) <= index_sr(moving_index_s downto 0) ror 1;
+              for j in n_elements-1 downto 0 loop
+                if j = 0 then
+                  index_sr(0) <= index_sr(moving_index_s);
+                elsif j <= moving_index_s then
+                  index_sr(j) <= index_sr(j-1);
+                end if;
+              end loop;
+              --We should have been using the line below, but it won't synthesize. Oh, tools...
+              --index_sr(moving_index_s downto 0) <= index_sr(moving_index_s downto 0) ror 1;
             end if;
           elsif request_i(index_sr(moving_index_s)) = '1' then
             if grant_o = std_logic_vector'( grant_o'range => '0' ) then

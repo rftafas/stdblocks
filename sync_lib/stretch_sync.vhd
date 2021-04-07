@@ -29,39 +29,37 @@ architecture behavioral of stretch_sync is
 
   --for the future: include attributes for false path.
 
-  signal dout_s        : std_logic := '0';
-  signal reg_forward_s : std_logic := '0';
-  signal reg_out_s     : std_logic_vector(2 downto 0) := (others=>'0');
-  signal reg_back_s    : std_logic_vector(1 downto 0) := (others=>'0');
+  signal da_tmp      : std_logic := '0';
+  signal db_tmp      : std_logic := '0';
 
 begin
 
   process(mclk_i)
-    variable da_tmp : std_logic := '0';
-    variable db_tmp : std_logic := '0';
   begin
     if rst_i = '1' then
-      da_tmp := '0';
-      db_tmp := '0';
-      dout_o <= '0';
+      da_tmp <= '0';
+      db_tmp <= '0';
     elsif rising_edge(mclk_i) then
-      dout_o <= '0';
-
-      if da_i = '1' then
-        da_tmp := '1';
+      if da_i = '1' and db_i = '1' then
+        da_tmp <= '0';
+        db_tmp <= '0';
+      elsif da_i = '1' and db_tmp = '1' then
+        da_tmp <= '0';
+        db_tmp <= '0';
+      elsif db_i = '1' and da_tmp = '1' then
+        da_tmp <= '0';
+        db_tmp <= '0';
+      elsif da_i = '1' then
+        da_tmp <= '1';
+      elsif db_i = '1' then
+        db_tmp <= '1';
       end if;
-
-      if db_i = '1' then
-        db_tmp := '1';
-      end if;
-
-      if da_tmp = '1' and db_tmp = '1' then
-        da_tmp := '0';
-        db_tmp := '0';
-        dout_o <= '1';
-      end if;
-
     end if;
   end process;
+
+  dout_o <= '1' when ( da_i   and db_i = '1' ) else
+            '1' when ( da_tmp and db_i = '1' ) else
+            '1' when ( db_tmp and da_i = '1' ) else
+            '0';
 
 end behavioral;

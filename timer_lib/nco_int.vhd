@@ -26,6 +26,7 @@ entity nco_int is
       rst_i     : in  std_logic;
       mclk_i    : in  std_logic;
       scaler_i  : in  std_logic;
+      sync_i    : in  std_logic;
       n_value_i : in  std_logic_vector(NCO_size_c-1 downto 0);
       clkout_o  : out std_logic
     );
@@ -38,11 +39,14 @@ architecture behavioral of nco_int is
 begin
 
   nco_p : process(mclk_i, rst_i)
+    variable sync_sr : std_logic_vector(1 downto 0);
   begin
     if rst_i = '1' then
       nco_s  <= (others=>'0');
     elsif rising_edge(mclk_i) then
-      if scaler_i = '1' then
+      if sync_i = '1' then
+        nco_s <= (others=>'0');
+      elsif scaler_i = '1' then
         nco_s <= nco_s + n_value_i;
       end if;
     end if;

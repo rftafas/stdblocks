@@ -24,17 +24,18 @@ library stdblocks;
 
 entity nco is
     generic (
-      Fref_hz         : real    := 100.0000e+6;
-      Fout_hz         : real    :=  10.0000e+6;
-      Resolution_hz   : real    :=  20.0000;
-      use_scaler      : boolean :=   false;
-      adjustable_freq : boolean :=   false;
-      NCO_size_c      : natural :=   16
+      Fref_hz         : real     := 100.0000e+6;
+      Fout_hz         : real     :=  10.0000e+6;
+      Resolution_hz   : real     :=  20.0000;
+      use_scaler      : boolean  :=  false;
+      adjustable_freq : boolean  :=  false;
+      NCO_size_c      : positive :=  16
     );
     port (
       rst_i     : in  std_logic;
       mclk_i    : in  std_logic;
       scaler_i  : in  std_logic;
+      sync_i    : in  std_logic;
       n_value_i : in  std_logic_vector(NCO_size_c-1 downto 0);
       clkout_o  : out std_logic
     );
@@ -42,8 +43,18 @@ end nco;
 
 architecture behavioral of nco is
 
+	function nco_size_sel ( adustable : boolean; fixed_size : integer; computed_size : integer ) return integer is
+	begin
+		if adustable then
+			return computed_size;
+    else
+			return fixed_size;
+		end if;
+	end nco_size_sel;
+
   signal   scaler_s        : std_logic;
-  constant internal_size_c : integer := nco_size_calc(Fref_hz,Resolution_hz,adjustable_freq,NCO_size_c);
+  constant computed_size_c : integer := nco_size_calc(Fref_hz,Resolution_hz);
+  constant internal_size_c : integer :=  nco_size_sel(adjustable_freq,NCO_size_c,computed_size_c);
   constant n_value_c       : unsigned(internal_size_c-1 downto 0) := to_unsigned(increment_value_calc(Fref_hz,Fout_hz,NCO_size_c),internal_size_c);
   signal   n_value_s       : unsigned(internal_size_c-1 downto 0) := (others=>'0');
   signal   nco_s           : unsigned(internal_size_c-1 downto 0) := (others=>'0');
@@ -79,6 +90,7 @@ begin
       rst_i     => rst_i,
       mclk_i    => mclk_i,
       scaler_i  => scaler_s,
+      sync_i    => sync_i,
       n_value_i => to_std_logic_vector(n_value_s),
       clkout_o  => clkout_o
     );

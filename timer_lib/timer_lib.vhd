@@ -32,9 +32,7 @@ package timer_lib is
 
 	function nco_size_calc (
 		Fref       : real;
-		res        : real;
-		adustable  : boolean;
-		fixed_size : integer
+		res        : real
 	) return integer;
 
 	function increment_value_calc (
@@ -192,13 +190,9 @@ package body timer_lib is
 		return real( input / norm ) * corr;
 	end to_real;
 
-	function nco_size_calc (Fref : real; res : real; adustable : boolean; fixed_size : integer) return integer is
+	function nco_size_calc (Fref : real; res : real) return integer is
 	begin
-		if adustable then
-			return integer(ceil(log2(Fref/res)));
-		else
-			return fixed_size;
-		end if;
+		return integer(ceil(log2(Fref/res)));
 	end nco_size_calc;
 
 	function increment_value_calc (Fref : real; Fout : real; size : integer ) return integer is
