@@ -98,6 +98,16 @@ package sync_lib is
     );
   end component;
 
+  component capture_pulse is
+    port (
+      rst_i     : in  std_logic;
+      mclk_i    : in  std_logic;
+      input_i   : in  std_logic;
+      trigger_i : in  std_logic;
+      output_o  : out std_logic
+    );
+  end component;
+
 end package;
 
 package body sync_lib is
