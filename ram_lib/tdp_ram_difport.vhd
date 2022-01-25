@@ -14,7 +14,7 @@
 ----------------------------------------------------------------------------------
 --RAM with different aspect ratios. NOTE:
 --Try to keep this RAM as small as possible as it is not very efficient.
---a more efficient RAM implementation can ve achieved using manufacturer MACROS.
+--a more efficient RAM implementation can be achieved using manufacturer MACROS.
 ----------------------------------------------------------------------------------
 library ieee;
     use ieee.std_logic_1164.all;
