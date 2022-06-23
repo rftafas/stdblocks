@@ -14,9 +14,10 @@
 ----------------------------------------------------------------------------------
 -- ADPLL will filter any input clock and get it back to 50% duty cycle with error
 -- To note:
--- * this PLL has a variable loop frequency : Lfreq = 2 * (Fout-Fin)
+-- * this PLL has a variable loop frequency : Lfreq = 2 * (Fout / Multiplier - Fin / Divider )
 --   meaning the closest to lock, the slower it gets.
--- * Total jitter depends on Fmclk and has an amplitude of 1/Fmclk.
+-- * Total jitter is equal to Fmclk and has an amplitude of 1/Fmclk + Fmclk Jitter
+-- * Fout = Multiplier * Fin / Divider
 ----------------------------------------------------------------------------------
 library ieee;
   use ieee.std_logic_1164.all;
@@ -27,7 +28,7 @@ library stdblocks;
   use stdblocks.sync_lib.all;
   use stdblocks.timer_lib.all;
 
-entity adpll is
+entity adpll_fractional is
   generic (
     Fref_hz       : real := 100.0000e+6;
     Fout_hz       : real :=  10.0000e+6;
@@ -35,14 +36,16 @@ entity adpll is
     Resolution_hz : real :=  20.0000
   );
   port (
-    rst_i    : in  std_logic;
-    mclk_i   : in  std_logic;
-    clkin_i  : in  std_logic;
-    clkout_o : out std_logic
+    rst_i        : in  std_logic;
+    mclk_i       : in  std_logic;
+    multiplier_i : in  integer;
+    divider_i    : in  integer;
+    clkin_i      : in  std_logic;
+    clkout_o     : out std_logic
   );
-end adpll;
+end adpll_fractional;
 
-architecture behavioral of adpll is
+architecture behavioral of adpll_fractional is
 
   constant nco_size_c : integer := nco_size_calc(Fref_hz,Resolution_hz);
   constant start_c    : integer := increment_value_calc(Fref_hz,Fout_hz,nco_size_c);
@@ -50,6 +53,8 @@ architecture behavioral of adpll is
   constant lower_c    : integer := increment_value_calc(Fref_hz,Fout_hz-Bandwidth_hz,nco_size_c);
 
   signal clkout_s  : std_logic;
+  signal clkout_en : std_logic;
+  signal clkin_en  : std_logic;
   signal up_s      : std_logic;
   signal down_s    : std_logic;
 
@@ -57,19 +62,56 @@ architecture behavioral of adpll is
 
 begin
 
-  up_u : det_updn port map (rst_i,mclk_i,   clkin_i,  up_s);
-  dn_u : det_updn port map (rst_i,mclk_i,clockout_s,down_s);
+  clkin_div_u   : det_updn port map (rst_i,mclk_i, clkin_i, clkin_en);
+  clkout_mult_u : det_updn port map (rst_i,mclk_i,clkout_s,clkout_en);
+
+  mult_div_p : process(all)
+    variable div_cnt  : integer := 0;
+    variable mult_cnt : integer := 0;
+  begin
+    if rst_i = '1' then
+      mult_cnt   := 0;
+      div_cnt    := 0;
+      div_clk_s  <= '0';
+      mult_clk_s <= '0';
+    elsif mclk_i = '1' and mclk_i'event then
+      --divider
+      if clkin_en = '1' then
+        div_cnt := div_cnt + 1;
+        if div_cnt = divider_i then
+          div_clk_s <= '1';
+        elsif div_cnt = 2*divider_i then
+          div_clk_s <= '0';
+          div_cnt := 0;
+        end if;
+      end if;
+      --multiplier
+      if clkout_en = '1' then
+        mult_cnt := mult_cnt + 1;
+        if mult_cnt = multiplier_i then
+          mult_clk_s <= '1';
+        elsif mult_cnt = 2*multiplier_i then
+          mult_clk_s <= '0';
+          mult_cnt := 0;
+        end if;
+      end if;
+
+    end if;
+  end process;
+
+  up_u : det_updn port map (rst_i,mclk_i,div_clk_s,   up_s);
+  dn_u : det_updn port map (rst_i,mclk_i,mult_clk_s,down_s);
 
   control_p : process(all)
   begin
     if rst_i = '1' then
       n_value_s <= to_std_logic_vector(start_c,nco_size_c);
     elsif mclk_i = '1' and mclk_i'event then
-      if up_s = '1' and down_s = '0' then
+      if up_s then
         if n_value_s /= upper_c then
           n_value_s <= n_value_s + 1;
         end if;
-      elsif up_s = '0' and down_s = '1' then
+      elsif down_s then
         if n_value_s /= lower_c then
           n_value_s <= n_value_s - 1;
         end if;
