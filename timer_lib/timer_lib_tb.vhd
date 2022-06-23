@@ -149,6 +149,23 @@ begin
           clkout_o => gen_clk_s
         );
 
+    when string_padding("frac_adpll",256) =>
+      frac_adpll_u : adpll_fractional
+        generic map(
+          Fref_hz       => Fref_hz,
+          Fout_hz       => Fout_hz,
+          Bandwidth_hz  => Bandwidth_hz,
+          Resolution_hz => Resolution_hz
+        )
+        port map(
+          rst_i         => rst_i,
+          mclk_i        => clk_i,
+          multiplier_i  => 4,
+          divider_i     => 4,
+          clkin_i       => clkin_s,
+          clkout_o      => gen_clk_s
+        );
+
     when string_padding("long_counter",256) =>
       long_counter_u : long_counter
         generic map (

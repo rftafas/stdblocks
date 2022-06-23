@@ -35,7 +35,6 @@ begin
   begin
     if rst_i = '1' then
       da_tmp <= '0';
-      db_tmp <= '0';
     elsif rising_edge(mclk_i) then
       if input_i = '1' and trigger_i = '1' then
         da_tmp <= '0';

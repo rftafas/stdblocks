@@ -145,18 +145,35 @@ package timer_lib is
 	  );
 	end component;
 
+	component adpll_fractional is
+		generic (
+		  Fref_hz       : real := 100.0000e+6;
+		  Fout_hz       : real :=  10.0000e+6;
+		  Bandwidth_hz  : real := 500.0000e+3;
+		  Resolution_hz : real :=  20.0000
+		);
+		port (
+		  rst_i        : in  std_logic;
+		  mclk_i       : in  std_logic;
+		  multiplier_i : in  integer;
+		  divider_i    : in  integer;
+		  clkin_i      : in  std_logic;
+		  clkout_o     : out std_logic
+		);
+	end component;
+
 	component nco_int is
 		generic (
-      NCO_size_c : natural := 16
-    );
-    port (
-      rst_i     : in  std_logic;
-      mclk_i    : in  std_logic;
-      scaler_i  : in  std_logic;
-      sync_i    : in  std_logic;
-      n_value_i : in  std_logic_vector(NCO_size_c-1 downto 0);
-      clkout_o  : out std_logic
-    );
+			NCO_size_c : natural := 16
+		);
+		port (
+			rst_i     : in  std_logic;
+			mclk_i    : in  std_logic;
+			scaler_i  : in  std_logic;
+			sync_i    : in  std_logic;
+			n_value_i : in  std_logic_vector(NCO_size_c-1 downto 0);
+			clkout_o  : out std_logic
+		);
 	end component;
 
 end package timer_lib;

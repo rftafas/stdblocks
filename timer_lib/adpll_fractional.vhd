@@ -52,18 +52,20 @@ architecture behavioral of adpll_fractional is
   constant upper_c    : integer := increment_value_calc(Fref_hz,Fout_hz+Bandwidth_hz,nco_size_c);
   constant lower_c    : integer := increment_value_calc(Fref_hz,Fout_hz-Bandwidth_hz,nco_size_c);
 
-  signal clkout_s  : std_logic;
-  signal clkout_en : std_logic;
-  signal clkin_en  : std_logic;
-  signal up_s      : std_logic;
-  signal down_s    : std_logic;
+  signal clkout_s   : std_logic;
+  signal clkout_en  : std_logic;
+  signal clkin_en   : std_logic;
+  signal div_clk_s  : std_logic;
+  signal mult_clk_s : std_logic;
+  signal up_s       : std_logic;
+  signal down_s     : std_logic;
 
   signal n_value_s : std_logic_vector(nco_size_c-1 downto 0) := to_std_logic_vector(start_c,nco_size_c);
 
 begin
 
-  clkin_div_u   : det_updn port map (rst_i,mclk_i, clkin_i, clkin_en);
-  clkout_mult_u : det_updn port map (rst_i,mclk_i,clkout_s,clkout_en);
+  clkin_div_u   : det_updown port map (rst_i,mclk_i, clkin_i, clkin_en);
+  clkout_mult_u : det_updown port map (rst_i,mclk_i,clkout_s,clkout_en);
 
   mult_div_p : process(all)
     variable div_cnt  : integer := 0;
@@ -99,8 +101,8 @@ begin
     end if;
   end process;
 
-  up_u : det_updn port map (rst_i,mclk_i,div_clk_s,   up_s);
-  dn_u : det_updn port map (rst_i,mclk_i,mult_clk_s,down_s);
+  up_u : det_updown port map (rst_i,mclk_i,div_clk_s,   up_s);
+  dn_u : det_updown port map (rst_i,mclk_i,mult_clk_s,down_s);
 
   control_p : process(all)
   begin

@@ -57,8 +57,8 @@ architecture behavioral of adpll is
 
 begin
 
-  up_u : det_updn port map (rst_i,mclk_i,   clkin_i,  up_s);
-  dn_u : det_updn port map (rst_i,mclk_i,clockout_s,down_s);
+  up_u : det_updown port map (rst_i,mclk_i, clkin_i,  up_s);
+  dn_u : det_updown port map (rst_i,mclk_i,clkout_s,down_s);
 
   control_p : process(all)
   begin

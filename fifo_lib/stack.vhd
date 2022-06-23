@@ -27,7 +27,7 @@ library stdblocks;
 library stdblocks;
     use stdblocks.fifo_lib.all;
 
-entity  is
+entity stack is
     generic (
       ram_type   : fifo_t  := blockram;
       port_size  : integer := 8;
@@ -49,9 +49,9 @@ entity  is
       --
       stack_status_o : out fifo_status
     );
-end stdfifo1ck;
+end stack;
 
-architecture behavioral of stdfifo1ck is
+architecture behavioral of stack is
 
   constant debug : boolean := false;
 
@@ -66,6 +66,9 @@ architecture behavioral of stdfifo1ck is
   signal up_en      : std_logic;
   signal dn_en      : std_logic;
   signal ffd_en     : std_logic;
+
+  signal regout_en  : std_logic;
+
 
 begin
 
@@ -101,7 +104,7 @@ begin
     regout_p : process(clk_i, rst_i)
     begin
         if rst_i = '1' then
-            dataa_o <= (otehrs=>'0');
+            dataa_o <= (others=>'0');
         elsif clk_i'event and clk_i = '1' then
             if regout_en = '1' then
                 if regout_sel = '1' then
@@ -118,7 +121,7 @@ begin
         if rst_i = '1' then
             stack_mq <= empty_st;
         elsif clk_i'event and clk_i = '1' then
-            stack_mq <= sync_state(up_en,dn_en,addr_cnt,0,stack_mq);
+            stack_mq <= sync_state(up_en,dn_en,addr_cnt,all_0(stack_size),stack_mq);
         end if;
     end process;
 
@@ -143,6 +146,6 @@ begin
             enb_i   => '1'
         );
 
-    stack_status_o <= fifo_status_f(fifo_mq);
+    stack_status_o <= fifo_status_f(stack_mq);
 
 end behavioral;

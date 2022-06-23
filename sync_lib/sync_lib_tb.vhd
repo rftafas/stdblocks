@@ -16,12 +16,22 @@ library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
 library stdblocks;
-    use stdblocks.sync_lib.all;
+  use stdblocks.sync_lib.all;
+library vunit_lib;
+  context vunit_lib.vunit_context;
 
 entity sync_lib_tb is
+  generic (
+		runner_cfg : string;
+		-- entity_sel : string;
+    run_time   : integer --;
+    -- period     : integer
+	);
 end sync_lib_tb;
 
 architecture behavioral of sync_lib_tb is
+
+  constant run_time_c    : time := run_time * 1 us;
 
   signal rst_i     : std_logic;
   signal mclk_i    : std_logic := '1';
@@ -41,6 +51,27 @@ begin
   mclk_i    <= not mclk_i    after 10 ns;
   slowclk_i <= not slowclk_i after 35 ns;
 
+  main : process
+  begin
+    test_runner_setup(runner, runner_cfg);
+
+    rst_i     <= '1';
+    wait until rising_edge(mclk_i);
+    wait until rising_edge(mclk_i);
+    rst_i     <= '0';
+
+    while test_suite loop
+      if run("Free running simulation") then
+        report "Will run for " & to_string(run_time_c);
+        wait for run_time_c;
+        check_true(true, result("Free running finished."));
+
+      end if;
+    end loop;
+
+    test_runner_cleanup(runner); -- Simulation ends here
+  end process;
+
   process
   begin
     align_i_s <= (others=>'0');
@@ -58,6 +89,8 @@ begin
     end loop;
     wait;
   end process;
+
+
 
   pulse_align_i : pulse_align
     generic map (
