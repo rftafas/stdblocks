@@ -38,6 +38,7 @@ package fifo_lib is
   function fifo_type_dec ( ram_type : fifo_t ) return mem_t;
 
   type fifo_state_t is (underflow_st, empty_st, f_empty_st, t_empty_st, goempty_st, steady_st, gofull_st, full_st, overflow_st);
+
   function sync_state (
     ien : std_logic; oen : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t
   ) return fifo_state_t;
@@ -53,7 +54,7 @@ package fifo_lib is
     signal oen   : in    std_logic;
     signal iaddr : in    gray_vector;
     signal oaddr : in    gray_vector;
-    signal state : inout fifo_state_t 
+    signal state : inout fifo_state_t
   );
 
   function fifo_status_f(mq_input : fifo_state_t) return fifo_status;
@@ -350,7 +351,7 @@ package body fifo_lib is
 
       when gofull_st =>
         if delta = 0 then
-          tmp:= full_st;  
+          tmp:= full_st;
         elsif delta < 3*fifo_length/4 then
             tmp := steady_st;
         end if;
