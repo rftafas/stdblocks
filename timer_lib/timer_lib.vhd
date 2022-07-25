@@ -57,7 +57,7 @@ package timer_lib is
 		cell_num  : integer
 	) return integer;
 
-	function measure_frequency (refclk : std_logic; counter_size : integer ) return real;
+	procedure measure_frequency (signal refclk : in std_logic; counter_size : in integer; result : out real );
 
 	component nco is
 	    generic (
@@ -134,7 +134,7 @@ package timer_lib is
 
 	component adpll is
 	  generic (
-			Fref_hz       : real := 100.0000e+6;
+		Fref_hz       : real := 100.0000e+6;
 	    Fout_hz       : real :=  10.0000e+6;
 	    Bandwidth_hz  : real := 500.0000e+3;
 	    Resolution_hz : real :=  20.0000
@@ -260,7 +260,7 @@ package body timer_lib is
 		return integer(tmp);
 	end rem_counter_limit;
 
-	function measure_frequency (refclk : std_logic; counter_size : integer ) return real is
+	procedure measure_frequency (signal refclk : in std_logic; counter_size : in integer; result : out real ) is
 		variable sim_time    : time;
     begin
         wait until rising_edge(refclk);
@@ -269,7 +269,7 @@ package body timer_lib is
             wait until rising_edge(refclk);
         end loop;
         sim_time := now - sim_time;
-        return ( real(counter_size) / to_real(sim_time) );
+        result := ( real(counter_size) / to_real(sim_time) );
     end procedure;
 
 end timer_lib;
