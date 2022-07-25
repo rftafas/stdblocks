@@ -57,7 +57,7 @@ package timer_lib is
 		cell_num  : integer
 	) return integer;
 
-	function measure_frequency (bclk : std_logic; counter_size : integer ) return real;
+	function measure_frequency (refclk : std_logic; counter_size : integer ) return real;
 
 	component nco is
 	    generic (
@@ -260,14 +260,13 @@ package body timer_lib is
 		return integer(tmp);
 	end rem_counter_limit;
 
-	function measure_frequency (bclk : std_logic; counter_size : integer ) return real is
-		variable int_counter : integer := 0;
+	function measure_frequency (refclk : std_logic; counter_size : integer ) return real is
+		variable sim_time    : time;
     begin
-        wait until rising_edge(bclk_o);
+        wait until rising_edge(refclk);
         sim_time := now;
         for j in 0 to counter_size-1 loop
-            wait until rising_edge(bclk_o);
-            loop_counter := loop_counter + 1;
+            wait until rising_edge(refclk);
         end loop;
         sim_time := now - sim_time;
         return ( real(counter_size) / to_real(sim_time) );
