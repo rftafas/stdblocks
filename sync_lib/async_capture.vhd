@@ -15,46 +15,56 @@
 library ieee;
     use ieee.std_logic_1164.all;
 
-entity stretch_async is
+entity async_capture is
     port (
         clkin_i    : in  std_logic;
         clkout_i   : in  std_logic;
         din        : in  std_logic;
         dout       : out std_logic
     );
-end stretch_async;
+end async_capture;
 
-architecture behavioral of stretch_async is
+architecture behavioral of async_capture is
 
   --for the future: include attributes for false path.
 
   signal dout_s        : std_logic := '0';
   signal reg_forward_s : std_logic := '0';
   signal reg_out_s     : std_logic_vector(2 downto 0) := (others=>'0');
-  signal reg_back_s    : std_logic_vector(1 downto 0) := (others=>'0');
+  signal reg_back_s    : std_logic;
 
 begin
 
-  process(clkin_i)
+  --note of operation:
+  --   We have here to capture signals faster than our clock. So... There will be dragons.
+  --
+  --   That said, the moment a signal comes through DIN, it will set the latch. Yes, a latch. No kidding, they are sometimes useful.
+  --once set, this latch will be sampled on the output clock, creating a feedback loop to reset the latch if the input is gone.
+  --(if not gone, it will remain set). The feedback signal is sampled a second time, elimitating metastability.
+  --
+  --   Its performance and all parameters related to the capture are yes, subject to the technology node + PAR, but
+  --for reasonably behaved signals on the range of nanoseconds, it should be fine (at least it is in 2022).
+
+  process(all)
   begin
-    if rising_edge(clkin_i) then
-      reg_back_s <= reg_back_s(0) & reg_out_s(1);
-      if reg_back_s(1) = '1' then
-        reg_forward_s <= '0';
-      elsif din = '1' then
+    --if rising_edge(clkin_i) then
+      if din = '1' then
         reg_forward_s <= '1';
+      elsif reg_back_s = '1' then
+        reg_forward_s <= '0';
       end if;
-    end if;
+    --end if;
   end process;
+  reg_back_s <= reg_out_s(0);
 
   process(clkout_i)
     variable lock_v : boolean := false;
   begin
     if rising_edge(clkout_i) then
-      reg_out_s  <= reg_out_s(1 downto 0) & reg_forward_s;
+      reg_out_s(1 downto 0)  <= reg_out_s(0) & reg_forward_s;
     end if;
   end process;
 
-  dout <= reg_out_s(2) and not reg_out_s(1);
+  dout <= reg_out_s(1);
 
 end behavioral;

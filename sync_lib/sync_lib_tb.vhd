@@ -138,7 +138,7 @@ begin
         dout   => syncr_s
       );
 
-    async_stretch_i : stretch_async
+    async_capture_i : async_capture
     port map (
       clkin_i   => slowclk_i,
       clkout_i  => mclk_i,

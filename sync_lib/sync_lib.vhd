@@ -70,14 +70,14 @@ package sync_lib is
     );
   end component pulse_align;
 
-  component stretch_async
+  component async_capture
     port (
       clkin_i  : in  std_logic;
       clkout_i : in  std_logic;
       din      : in  std_logic;
       dout     : out std_logic
     );
-  end component stretch_async;
+  end component;
 
   component stretch_sync is
       port (

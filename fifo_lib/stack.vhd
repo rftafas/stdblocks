@@ -29,9 +29,9 @@ library stdblocks;
 
 entity stack is
     generic (
-      ram_type   : fifo_t  := blockram;
-      port_size  : integer := 8;
-      stack_size : integer := 8
+        ram_type   : fifo_t   := blockram;
+        stack_size : positive := 8;
+        port_size  : positive := 8
     );
     port (
       --general
@@ -58,7 +58,7 @@ architecture behavioral of stack is
   signal addr_cnt : std_logic_vector(stack_size-1 downto 0) := (others=>'0');
   signal stack_mq : fifo_state_t := empty_st;
 
-  signal dataa_i_s : std_logic_vector(port_size-1 downto 0);
+  signal dataa_i_s  : std_logic_vector(port_size-1 downto 0);
   signal ram_data_s : std_logic_vector(port_size-1 downto 0);
 
   signal wena_en    : std_logic;
@@ -71,6 +71,11 @@ architecture behavioral of stack is
 
 
 begin
+
+    assert stack_size >= 4
+    report "Stack Size must be greater than 8."
+    severity failure;
+
 
     --memory write control
     wena_en    <= wen_i;
@@ -91,7 +96,7 @@ begin
         elsif clk_i'event and clk_i = '1' then
             if up_en = '1' then
                 if addr_cnt /= all_1(stack_size) then
-                    addr_cnt <= addr_cnt;
+                    addr_cnt <= addr_cnt + 1;
                 end if;
             elsif dn_en = '1' then
                 if addr_cnt /= 0  then

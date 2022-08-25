@@ -24,9 +24,9 @@ library stdblocks;
 
 entity stdfifo1ck is
     generic (
-      ram_type  : fifo_t := blockram;
-      port_size : integer := 8;
-      fifo_size : integer := 8
+      ram_type  : fifo_t   := blockram;
+      fifo_size : positive := 8;
+      port_size : positive := 8
     );
     port (
       --general
@@ -43,50 +43,58 @@ end stdfifo1ck;
 
 architecture behavioral of stdfifo1ck is
 
-  constant debug : boolean := false;
-
   signal addri_cnt    : std_logic_vector(fifo_size-1 downto 0) := (others=>'0');
   signal addro_cnt    : std_logic_vector(fifo_size-1 downto 0) := (others=>'0');
   signal fifo_mq      : fifo_state_t := empty_st;
 
-  signal ena_i_s      : std_logic;
-  signal enb_i_s      : std_logic;
+  signal addri_cnt_en : std_logic;
+  signal ram_wr_en    : std_logic;
+  signal addro_cnt_en : std_logic;
+  signal ram_oe_en    : std_logic;
 
 begin
 
-  --Input
-  ena_i_s <= '0' when fifo_mq = full_st     else
-             '0' when fifo_mq = overflow_st else
-             ena_i;
+    assert fifo_size >= 4
+    report "Fifo Size must be greater than 4."
+    severity failure;
 
-  input_p : process(clk_i, rst_i)
-  begin
-    if rst_i = '1' then
-      addri_cnt <= (others=>'0');
-    elsif clk_i'event and clk_i = '1' then
-      if ena_i_s = '1' then
-        addri_cnt    <= addri_cnt + 1;
-      end if;
-    end if;
-  end process;
+
+    --Input
+    addri_cnt_en  <=    ena_i;
+    ram_wr_en     <=    ena_i;
+
+    input_p : process(clk_i, rst_i)
+    begin
+        if rst_i = '1' then
+            addri_cnt <= (others=>'0');
+        elsif clk_i'event and clk_i = '1' then
+            if fifo_mq = overflow_st or fifo_mq = underflow_st then
+                addri_cnt     <= (others=>'0');
+            elsif addri_cnt_en = '1' then
+                addri_cnt    <= addri_cnt + 1;
+            end if;
+        end if;
+    end process;
 
   --output
-  enb_i_s <= '0'   when fifo_mq = underflow_st else
-             '1'   when fifo_mq = f_empty_st   else
-             '0'   when fifo_mq = t_empty_st   else
-             '0'   when fifo_mq = empty_st     else
-             enb_i;
+    addro_cnt_en    <=  '1'     when fifo_mq = load_output_st    else
+                        enb_i;
 
-  output_p : process(clk_i, rst_i)
-  begin
-    if rst_i = '1' then
-      addro_cnt <= (others=>'0');
-    elsif clk_i'event and clk_i = '1' then
-      if enb_i_s = '1' then
-        addro_cnt    <= addro_cnt + 1;
-      end if;
-    end if;
-  end process;
+    ram_oe_en     <=    '1'     when fifo_mq = load_output_st    else
+                        enb_i;
+
+    output_p : process(clk_i, rst_i)
+    begin
+        if rst_i = '1' then
+            addro_cnt <= (others=>'0');
+        elsif clk_i'event and clk_i = '1' then
+            if fifo_mq = overflow_st or fifo_mq = underflow_st then
+                addro_cnt <= (others=>'0');
+            elsif addro_cnt_en = '1' then
+                addro_cnt <= addro_cnt + 1;
+            end if;
+        end if;
+    end process;
 
   control_p : process(clk_i, rst_i)
   begin
@@ -114,17 +122,10 @@ begin
       addrb_i => addro_cnt,
       datab_o => datab_o,
       ena_i   => '1',
-      wea_i   => ena_i_s,
-      enb_i   => enb_i_s
+      wea_i   => ram_wr_en,
+      enb_i   => ram_oe_en
     );
 
   fifo_status_o  <= fifo_status_f(fifo_mq);
-
-  debug_gen : if debug generate
-    signal delta_s : std_logic_vector(addri_cnt'range);
-  begin
-    delta_s <= addri_cnt - addro_cnt;
-  end generate;
-
 
 end behavioral;

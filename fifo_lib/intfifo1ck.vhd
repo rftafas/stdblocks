@@ -24,9 +24,9 @@ library stdblocks;
 
 entity intfifo1ck is
     generic (
-      ram_type  : fifo_t := blockram;
-      port_size : integer := 8;
-      fifo_size : integer := 8
+      ram_type  : fifo_t   := blockram;
+      fifo_size : positive := 8;
+      port_size : positive := 8
     );
     port (
       --general
@@ -80,8 +80,8 @@ begin
 
   --output
   enb_i_s <= '0'   when fifo_mq = underflow_st else
-             '1'   when fifo_mq = f_empty_st   else
-             '0'   when fifo_mq = t_empty_st   else
+             '1'   when fifo_mq = load_output_st   else
+             '0'   when fifo_mq = last_data_register_st   else
              '0'   when fifo_mq = empty_st     else
              enb_i;
 
