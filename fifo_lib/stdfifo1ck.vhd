@@ -60,7 +60,9 @@ begin
 
 
     --Input
-    addri_cnt_en  <=    ena_i;
+    addri_cnt_en  <=    '0'     when fifo_mq = empty_st         else
+                        ena_i;
+
     ram_wr_en     <=    ena_i;
 
     input_p : process(clk_i, rst_i)
@@ -77,7 +79,7 @@ begin
     end process;
 
   --output
-    addro_cnt_en    <=  '1'     when fifo_mq = load_output_st    else
+    addro_cnt_en    <=  '0'     when fifo_mq = last_data_register_st else
                         enb_i;
 
     ram_oe_en     <=    '1'     when fifo_mq = load_output_st    else

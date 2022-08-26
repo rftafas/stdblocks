@@ -384,7 +384,6 @@ begin
                 else
                     wait until rising_edge(clkb_i);
                 end if;
-                wait for 1 ps;
                 if counter_v = 2**(fifo_size+2) then
                     read_flag <= true;
                     info("Aux: Read Complete.");

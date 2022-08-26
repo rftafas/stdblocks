@@ -274,12 +274,14 @@ package body fifo_lib is
         variable delta       : unsigned(iaddr'range) := (others=>'0');
         variable up          : std_logic             := '0';
         variable dn          : std_logic             := '0';
+        variable keep        : std_logic             := '0';
         variable fifo_length : integer               := 2**iaddr'length;
     begin
         tmp   := current_state;
         delta := unsigned(iaddr) - unsigned(oaddr);
         up    := ien and not oen;
         dn    := oen and not ien;
+        keep  := oen and ien;
 
 		case current_state is
             when empty_st =>
@@ -303,13 +305,14 @@ package body fifo_lib is
                     tmp:= goempty_st;
                 elsif dn = '1' then
                     tmp:= empty_st;
-                else
+                elsif keep = '1' then
                     tmp:= last_data_register_st;
                 end if;
 
             when goempty_st =>
                 if delta = 1 and dn  = '1' then
                     tmp := last_data_register_st;
+                    report(to_string(delta));
                 elsif delta = fifo_length/4 then
                     tmp:= steady_st;
                 end if;
