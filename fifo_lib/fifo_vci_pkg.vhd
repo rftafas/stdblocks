@@ -169,7 +169,6 @@ package body fifo_vci_pkg is
                 fifo_read_signals(data_v,clk,en,data);
                 push(reply_msg,data_v);
                 reply(net, request_msg, reply_msg);
-                wait_for(2 ps);
             end if;
         end port_b;
 
@@ -184,8 +183,7 @@ package body fifo_vci_pkg is
     begin
         en     <= '1';
         data_s <= data_v;
-        wait until rising_edge(clk);
-        wait for 1 ps;
+        wait until en = '1' and rising_edge(clk);
     end procedure;
 
     procedure fifo_read_signals (
@@ -195,11 +193,10 @@ package body fifo_vci_pkg is
         signal data_s : in  std_logic_vector
     ) is
     begin
-        wait for 1 ps;
         en <= '1';
-        wait until rising_edge(clk);
+        wait until en = '1' and rising_edge(clk);
         data_v := data_s;
-        wait for 1 ps;
+        wait until data_v = data_s;
     end procedure;
 
     procedure wait_for ( constant period : time ) is

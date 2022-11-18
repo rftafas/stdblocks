@@ -17,78 +17,119 @@ library IEEE;
 
 package ram_lib is
 
-  type mem_t is (blockram, ultra, registers, distributed);
-  attribute ram_style : string;
+    --this may either be adjusted or leave as is for intended technology.
+    constant blockram_size : positive := 9216;
 
-  component tdp_ram
-    generic (
-      mem_size  : integer := 8;
-      port_size : integer := 8;
-      ram_type  : mem_t := blockram
-    );
-    port (
-      clka_i  : in  std_logic;
-      rsta_i  : in  std_logic;
-      clkb_i  : in  std_logic;
-      rstb_i  : in  std_logic;
-      addra_i : in  std_logic_vector(mem_size-1 downto 0);
-      addrb_i : in  std_logic_vector(mem_size-1 downto 0);
-      dataa_i : in  std_logic_vector(port_size-1 downto 0);
-      datab_i : in  std_logic_vector(port_size-1 downto 0);
-      dataa_o : out std_logic_vector(port_size-1 downto 0);
-      datab_o : out std_logic_vector(port_size-1 downto 0);
-      ena_i   : in  std_logic;
-      enb_i   : in  std_logic;
-      wea_i   : in  std_logic;
-      web_i   : in  std_logic
-    );
-  end component tdp_ram;
+    --xilinx attribute
+    attribute ram_style : string;
+    --intel attribute
+    attribute ramstyle : string;
 
-  component dp_ram
-    generic (
-      mem_size  : integer := 8;
-      port_size : integer := 8;
-      ram_type  : mem_t := blockram
-    );
-    port (
-      clka_i  : in  std_logic;
-      rsta_i  : in  std_logic;
-      clkb_i  : in  std_logic;
-      rstb_i  : in  std_logic;
-      addra_i : in  std_logic_vector( mem_size-1 downto 0);
-      dataa_i : in  std_logic_vector(port_size-1 downto 0);
-      dataa_o : out std_logic_vector(port_size-1 downto 0);
-      addrb_i : in  std_logic_vector( mem_size-1 downto 0);
-      datab_o : out std_logic_vector(port_size-1 downto 0);
-      ena_i   : in  std_logic;
-      enb_i   : in  std_logic;
-      wea_i   : in  std_logic
-    );
-  end component dp_ram;
+    type mem_t is (blockram, ultra, registers, distributed);
 
-  function ram_type_dec ( ram_type : mem_t ) return string;
+    component tdp_ram
+        generic (
+            mem_size        : integer := 8;
+            port_size       : integer := 8;
+            ram_type        : string  := "auto";
+            fall_through    : boolean := false
+        );
+        port (
+            clka_i  : in  std_logic;
+            rsta_i  : in  std_logic;
+            clkb_i  : in  std_logic;
+            rstb_i  : in  std_logic;
+            addra_i : in  std_logic_vector(mem_size-1 downto 0);
+            addrb_i : in  std_logic_vector(mem_size-1 downto 0);
+            dataa_i : in  std_logic_vector(port_size-1 downto 0);
+            datab_i : in  std_logic_vector(port_size-1 downto 0);
+            dataa_o : out std_logic_vector(port_size-1 downto 0);
+            datab_o : out std_logic_vector(port_size-1 downto 0);
+            ena_i   : in  std_logic;
+            enb_i   : in  std_logic;
+            wea_i   : in  std_logic;
+            web_i   : in  std_logic
+        );
+    end component tdp_ram;
+
+    component dp_ram
+        generic (
+            mem_size        : integer := 8;
+            port_size       : integer := 8;
+            ram_type        : string  := "auto";
+            fall_through    : boolean := false
+        );
+        port (
+            clka_i  : in  std_logic;
+            rsta_i  : in  std_logic;
+            clkb_i  : in  std_logic;
+            rstb_i  : in  std_logic;
+            addra_i : in  std_logic_vector( mem_size-1 downto 0);
+            dataa_i : in  std_logic_vector(port_size-1 downto 0);
+            dataa_o : out std_logic_vector(port_size-1 downto 0);
+            addrb_i : in  std_logic_vector( mem_size-1 downto 0);
+            datab_o : out std_logic_vector(port_size-1 downto 0);
+            ena_i   : in  std_logic;
+            enb_i   : in  std_logic;
+            wea_i   : in  std_logic
+        );
+    end component;
+
+    component tdp_ram_difport is
+        generic (
+            mem_size        : integer := 8;
+            porta_size      : integer := 1;
+            portb_size      : integer := 8;
+            ram_type        : string  := "auto";
+            fall_through    : boolean := false
+        );
+        port (
+            --general
+            clka_i   : in  std_logic;
+            rsta_i   : in  std_logic;
+            clkb_i   : in  std_logic;
+            rstb_i   : in  std_logic;
+            addra_i  : in  std_logic_vector(mem_size-1 downto 0);
+            addrb_i  : in  std_logic_vector(mem_size-1 downto 0);
+            dataa_i  : in  std_logic_vector(porta_size-1 downto 0);
+            datab_i  : in  std_logic_vector(portb_size-1 downto 0);
+            dataa_o  : out std_logic_vector(porta_size-1 downto 0);
+            datab_o  : out std_logic_vector(portb_size-1 downto 0);
+            ena_i    : in  std_logic;
+            enb_i    : in  std_logic;
+            wea_i    : in  std_logic;
+            web_i    : in  std_logic
+        );
+    end component;
+
+    function ram_type_dec ( ram_type : string; port_size : positive; ram_size : positive ) return mem_t;
 
 end package;
 
 package body ram_lib is
 
-    function ram_type_dec ( ram_type : mem_t ) return string is
-        --variable tmp : string;
+    function ram_type_dec ( ram_type : string; port_size : positive; ram_size : positive ) return mem_t is
     begin
-        case ram_type is
-            when blockram =>
-                return "block";
-            when ultra =>
-                return "ultra";
-            when registers =>
-                return "registers";
-            when distributed =>
-                return "distributed";
-            when others =>
-                return "registers";
-                report "Unknown ram type. Using Flip-flops." severity warning;
-        end case;
-        --return tmp;
+        if ram_type = "block" then
+            return blockram;
+        elsif ram_type = "distributed" then
+            return distributed;
+        elsif ram_type = "registers" then
+            report "Register based RAM is usually a waste of resources. Try using block or distributed RAM types." severity warning;
+            return registers;
+        elsif ram_type = "auto" then
+            if 2**ram_size*port_size < blockram_size/64 then
+                report "Using 'Auto'. Selected RAM is DISTRIBUTED." severity warning;
+                return distributed;
+            else
+                report "Using 'Auto'. Selected RAM is BLOCK." severity warning;
+                return blockram;
+            end if;
+        else
+            assert false
+                report "The value '" & ram_type & "' is invalid. Valid RAM types are 'auto', 'block', 'distributed' or 'register'."
+                severity FAILURE;
+        end if;
     end function ram_type_dec;
 
 

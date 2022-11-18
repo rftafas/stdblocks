@@ -29,23 +29,17 @@ library stdblocks;
 
 entity stack is
     generic (
-        ram_type   : fifo_t   := blockram;
+        ram_type   : string   := "auto";
         stack_size : positive := 8;
         port_size  : positive := 8
     );
     port (
-      --general
       clk_i       : in  std_logic;
       rst_i       : in  std_logic;
-      --STACK WRITE port.
       dataa_i     : in  std_logic_vector(port_size-1 downto 0);
       wen_i       : in  std_logic;
-      --STACK READ port
       dataa_o     : out std_logic_vector(port_size-1 downto 0);
       ren_i       : in  std_logic;
-      --RAM port
-      addrb_i  : in  std_logic_vector(stack_size-1 downto 0);
-      datab_o  : out std_logic_vector(port_size-1 downto 0);
       --
       stack_status_o : out fifo_status
     );
@@ -53,21 +47,14 @@ end stack;
 
 architecture behavioral of stack is
 
-  constant debug : boolean := false;
+    signal data_cnt   : std_logic_vector(stack_size-1 downto 0);
 
-  signal addr_cnt : std_logic_vector(stack_size-1 downto 0) := (others=>'0');
-  signal stack_mq : fifo_state_t := empty_st;
+    signal up_en      : std_logic;
+    signal dn_en      : std_logic;
+    signal read_en    : std_logic;
+    signal write_en   : std_logic;
 
-  signal dataa_i_s  : std_logic_vector(port_size-1 downto 0);
-  signal ram_data_s : std_logic_vector(port_size-1 downto 0);
-
-  signal wena_en    : std_logic;
-  signal regout_sel : std_logic;
-  signal up_en      : std_logic;
-  signal dn_en      : std_logic;
-  signal ffd_en     : std_logic;
-
-  signal regout_en  : std_logic;
+    signal stack_mq   : fifo_state_t := empty_st;
 
 
 begin
@@ -76,81 +63,60 @@ begin
     report "Stack Size must be greater than 8."
     severity failure;
 
-
     --memory write control
-    wena_en    <= wen_i;
+    up_en   <=  '1' when wen_i = '1' and ren_i = '0' else '0';
+    dn_en   <=  '1' when wen_i = '0' and ren_i = '1' else '0';
 
-    --output register source sel
-    regout_sel <= wen_i;
-    regout_en  <= wen_i and ren_i;
+    read_en  <= wen_i and ren_i;
+    write_en <= wen_i;
 
     --counter control
-    up_en  <= wen_i and not ren_i;
-    dn_en  <= ren_i and not wen_i;
-
-
-    addr_p : process(clk_i, rst_i)
+    data_cnt_p : process(clk_i, rst_i)
     begin
         if rst_i = '1' then
-            addr_cnt <= (others=>'0');
+            data_cnt <= (others=>'0');
         elsif clk_i'event and clk_i = '1' then
-            if up_en = '1' then
-                if addr_cnt /= all_1(stack_size) then
-                    addr_cnt <= addr_cnt + 1;
-                end if;
+            if stack_mq = overflow_st or stack_mq = underflow_st then
+                data_cnt <= (others=>'0');
+            elsif up_en = '1' then
+                data_cnt <= data_cnt + 1;
             elsif dn_en = '1' then
-                if addr_cnt /= 0  then
-                    addr_cnt <= addr_cnt - 1;
-                end if;
+                data_cnt <= data_cnt - 1;
             end if;
         end if;
     end process;
 
-    regout_p : process(clk_i, rst_i)
-    begin
-        if rst_i = '1' then
-            dataa_o <= (others=>'0');
-        elsif clk_i'event and clk_i = '1' then
-            if regout_en = '1' then
-                if regout_sel = '1' then
-                    dataa_o <= ram_data_s;
-                else
-                    dataa_o <= dataa_i;
-                end if;
-            end if;
-        end if;
-    end process;
-
-    fifo_state_p : process(clk_i, rst_i)
+    control_p : process(clk_i, rst_i)
     begin
         if rst_i = '1' then
             stack_mq <= empty_st;
         elsif clk_i'event and clk_i = '1' then
-            stack_mq <= sync_state(up_en,dn_en,addr_cnt,all_0(stack_size),stack_mq);
+            stack_mq <= stack_state(wen_i,ren_i,data_cnt,stack_mq);
         end if;
     end process;
+    stack_status_o <= fifo_status_f(stack_mq);
 
-    dp_ram_u : dp_ram
+    ram_u : dp_ram
         generic map (
-            ram_type  => fifo_type_dec(ram_type),
-            mem_size  => stack_size,
-            port_size => port_size
+            mem_size        => stack_size,
+            port_size       => port_size,
+            ram_type        => ram_type,
+            fall_through    => true
         )
         port map (
-            clka_i  => clk_i,
-            rsta_i  => rst_i,
-            clkb_i  => clk_i,
-            rstb_i  => rst_i,
-            addra_i => addr_cnt,
-            dataa_i => dataa_i,
-            dataa_o => ram_data_s,
-            addrb_i => addrb_i,
-            datab_o => datab_o,
-            ena_i   => '1',
-            wea_i   => wena_en,
-            enb_i   => '1'
+            --general
+            clka_i   => clk_i,
+            rsta_i   => rst_i,
+            clkb_i   => clk_i,
+            rstb_i   => rst_i,
+            addra_i  => data_cnt,
+            addrb_i  => all_0(stack_size),
+            dataa_i  => dataa_i,
+            dataa_o  => dataa_o,
+            datab_o  => open,
+            ena_i    => read_en,
+            enb_i    => '0',
+            wea_i    => write_en
         );
-
-    stack_status_o <= fifo_status_f(stack_mq);
 
 end behavioral;

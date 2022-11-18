@@ -22,81 +22,50 @@ library stdblocks;
 
 entity dp_ram is
     generic (
-      mem_size  : integer := 8;
-      port_size : integer := 8;
-      ram_type  : mem_t   := blockram
+        mem_size        : integer := 8;
+        port_size       : integer := 8;
+        ram_type        : string  := "auto";
+        fall_through    : boolean := false
     );
     port (
-      --general
-      clka_i   : in  std_logic;
-      rsta_i   : in  std_logic;
-      clkb_i   : in  std_logic;
-      rstb_i   : in  std_logic;
-      addra_i  : in  std_logic_vector(mem_size-1 downto 0);
-      addrb_i  : in  std_logic_vector(mem_size-1 downto 0);
-      dataa_i  : in  std_logic_vector(port_size-1 downto 0);
-      dataa_o  : out std_logic_vector(port_size-1 downto 0);
-      datab_o  : out std_logic_vector(port_size-1 downto 0);
-      ena_i    : in  std_logic;
-      enb_i    : in  std_logic;
-      wea_i    : in  std_logic
+        --general
+        clka_i   : in  std_logic;
+        rsta_i   : in  std_logic;
+        clkb_i   : in  std_logic;
+        rstb_i   : in  std_logic;
+        addra_i  : in  std_logic_vector(mem_size-1 downto 0);
+        addrb_i  : in  std_logic_vector(mem_size-1 downto 0);
+        dataa_i  : in  std_logic_vector(port_size-1 downto 0);
+        dataa_o  : out std_logic_vector(port_size-1 downto 0);
+        datab_o  : out std_logic_vector(port_size-1 downto 0);
+        ena_i    : in  std_logic;
+        enb_i    : in  std_logic;
+        wea_i    : in  std_logic
     );
 end dp_ram;
 
 architecture behavioral of dp_ram is
 
-  constant ram_size : integer := 2**mem_size;
-  type ram_data_t  is array (ram_size-1 downto 0) of std_logic_vector(dataa_i'range);
-  signal ram_data_s : ram_data_t := (others=>(others=>'0'));
+    constant  ram_type_c : mem_t := ram_type_dec(ram_type,port_size,mem_size);
 
-  constant ram_string : string := ram_type_dec(ram_type);
-  attribute ram_style of ram_data_s : signal is ram_string;
+    constant ram_size : integer := 2**mem_size;
+    type ram_data_t  is array (ram_size-1 downto 0) of std_logic_vector(dataa_i'range);
+    signal ram_data_s : ram_data_t := (others=>(others=>'0'));
+
+    signal dataa_o_s   : std_logic_vector(port_size-1 downto 0) := (others=>'0');
 
 begin
 
-    ram_gen : if ram_type = ultra generate
-
-        ultraram_u : tdp_ram
-            generic map(
-                mem_size  => mem_size,
-                port_size => port_size,
-                ram_type  => ram_type
-            )
-            port map (
-                clka_i  => clka_i,
-                rsta_i  => rsta_i,
-                clkb_i  => clka_i,
-                rstb_i  => rsta_i,
-                addra_i => addra_i,
-                addrb_i => addrb_i,
-                dataa_i => dataa_i,
-                datab_i => (dataa_i'range => '0'),
-                dataa_o => open,
-                datab_o => datab_o,
-                ena_i   => ena_i,
-                enb_i   => enb_i,
-                wea_i   => wea_i,
-                web_i   => '0'
-            );
-
-        assert true
-            report "Ultra RAM only uses CLKA and RSTA. Ignoring CLKB and RSTB."
-            severity note;
-
-        assert not clkb_i'event
-            report "Detected clock activity on port clock B. UltraRAM only uses clock from port A."
-            severity failure;
-
-    elsif ram_type = blockram generate
+    ram_gen : if ram_type_c = blockram generate
 
         bramin_p : process(clka_i, rsta_i)
         begin
             if rising_edge(clka_i) then
                 if ena_i = '1' then
                     if rsta_i = '1' then
-                        dataa_o <= (others=>'0');
+                        dataa_o_s <= (others=>'0');
                     else
-                        dataa_o <= ram_data_s(to_integer(addra_i));
+                        dataa_o_s <= ram_data_s(to_integer(addra_i));
                     end if;
                     if wea_i = '1' then
                         ram_data_s(to_integer(addra_i)) <= dataa_i;
@@ -118,15 +87,15 @@ begin
             end if;
         end process;
 
-    elsif ram_type = distributed generate
+    elsif ram_type_c = distributed generate
 
         lutin_p : process(clka_i, rsta_i)
         begin
             if rsta_i = '1' then
-                dataa_o    <= (others=>'0');
+                dataa_o_s    <= (others=>'0');
             elsif rising_edge(clka_i) then
                 if ena_i = '1' then
-                    dataa_o <= ram_data_s(to_integer(addra_i));
+                    dataa_o_s <= ram_data_s(to_integer(addra_i));
                     if wea_i = '1' then
                         ram_data_s(to_integer(addra_i)) <= dataa_i;
                     end if;
@@ -140,7 +109,7 @@ begin
                 datab_o <= (others=>'0');
             elsif rising_edge(clkb_i) then
                 if enb_i = '1' then
-                datab_o <= ram_data_s(to_integer(addrb_i));
+                    datab_o <= ram_data_s(to_integer(addrb_i));
                 end if;
             end if;
         end process;
@@ -151,10 +120,10 @@ begin
         begin
             if rsta_i = '1' then
                 ram_data_s <= (others=>(others=>'0'));
-                dataa_o    <= (others=>'0');
+                dataa_o_s    <= (others=>'0');
             elsif rising_edge(clka_i) then
                 if ena_i = '1' then
-                    dataa_o <= ram_data_s(to_integer(addra_i));
+                    dataa_o_s <= ram_data_s(to_integer(addra_i));
                     if wea_i = '1' then
                         ram_data_s(to_integer(addra_i)) <= dataa_i;
                     end if;
@@ -173,7 +142,32 @@ begin
             end if;
         end process;
 
-  end generate;
+    end generate;
 
+    fall_through_gen : if fall_through generate
+        signal dataa_reg_en : std_logic;
+        signal dataa_reg_s  : std_logic_vector(port_size-1 downto 0);
+    begin
+        fall_through_p : process(all)
+        begin
+            if rsta_i = '1' then
+                dataa_reg_s  <= (others=>'0');
+                dataa_reg_en <= '0';
+            elsif rising_edge(clka_i) then
+                if ena_i = '1' and wea_i = '1' then
+                    dataa_reg_s <= dataa_i;
+                    dataa_reg_en <= '1';
+                else
+                    dataa_reg_en <= '0';
+                end if;
+            end if;
+        end process;
+
+        dataa_o <= dataa_reg_s when dataa_reg_en = '1' else dataa_o_s;
+
+    else generate
+        dataa_o <= dataa_o_s;
+
+    end generate;
 
 end behavioral;

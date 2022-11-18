@@ -9,22 +9,6 @@ except:
     print("Also, make sure to have either GHDL or Modelsim installed.")
     exit()
 
-# entities_list = (
-#     "pwm",
-#     "nco",
-#     "adpll",
-#     "long_counter",
-#     "precise_long_counter"
-# )
-
-# period_list = {
-#     "pwm"   : 50,
-#     "nco"   : 50,
-#     "adpll" : 50,
-#     "long_counter" : 40960,
-#     "precise_long_counter" : 50000
-# }
-
 root = dirname(__file__)
 
 vu = VUnit.from_argv()
@@ -45,15 +29,14 @@ stdblocks.add_source_files(join(root, "./*.vhd"))
 test_tb = stdblocks.entity("fifo_lib_tb")
 test_tb.scan_tests_from_file(join(root, "fifo_lib_tb.vhd"))
 
-entities_list = (
+fifo_list = (
     #"intfifo1ck",
     "srfifo1ck",
     "stdfifo1ck",
     "stdfifo2ck",
-    "stack"
 )
 
-for entity in entities_list:
+for entity in fifo_list:
     test_tb.add_config(
         name = entity,
         generics = dict(
@@ -63,3 +46,4 @@ for entity in entities_list:
     )
 
 vu.main()
+

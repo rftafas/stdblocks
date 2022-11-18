@@ -19,8 +19,6 @@ library IEEE;
 library expert;
   use expert.std_logic_expert.all;
   use expert.std_logic_gray.all;
-library stdblocks;
-    use stdblocks.ram_lib.all;
 
 package fifo_lib is
 
@@ -34,14 +32,18 @@ package fifo_lib is
         underflow : std_logic;
     end record fifo_status;
 
-    type fifo_t is (blockram, ultra, registers, distributed);
     type fifo_state_t is (
         underflow_st, empty_st, load_output_st, last_data_register_st, goempty_st, steady_st, gofull_st, full_st, overflow_st
     );
 
-    function fifo_type_dec ( ram_type : fifo_t ) return mem_t;
-
     function srfifo_state (
+        ien             : std_logic;
+        oen             : std_logic;
+        addr            : std_logic_vector;
+        current_state   : fifo_state_t
+    ) return fifo_state_t;
+
+    function stack_state (
         ien             : std_logic;
         oen             : std_logic;
         addr            : std_logic_vector;
@@ -77,7 +79,7 @@ package fifo_lib is
 
     component stdfifo2ck
         generic (
-            ram_type  : fifo_t := blockram;
+            ram_type  : string   := "auto";
             fifo_size : positive := 8;
             port_size : positive := 8
         );
@@ -97,7 +99,7 @@ package fifo_lib is
 
     component stdfifo1ck
         generic (
-            ram_type  : fifo_t := blockram;
+            ram_type  : string   := "auto";
             port_size : positive := 8;
             fifo_size : positive := 8
         );
@@ -130,7 +132,7 @@ package fifo_lib is
 
     component intfifo1ck is
         generic (
-            ram_type  : fifo_t := blockram;
+            ram_type  : string   := "auto";
             port_size : positive := 8;
             fifo_size : positive := 8
         );
@@ -153,7 +155,7 @@ package fifo_lib is
 
     component stack is
         generic (
-            ram_type   : fifo_t  := blockram;
+            ram_type   : string   := "auto";
             port_size  : positive := 8;
             stack_size : positive := 8
         );
@@ -173,23 +175,6 @@ package fifo_lib is
 end package;
 
 package body fifo_lib is
-
-    function fifo_type_dec ( ram_type : fifo_t ) return mem_t is
-    begin
-        case ram_type is
-            when blockram =>
-                return blockram;
-            when ultra =>
-                return ultra;
-            when registers =>
-                return registers;
-            when distributed =>
-                return distributed;
-            when others =>
-                return registers;
-                report "Unknown fifo type. Using Flip-flops." severity warning;
-        end case;
-    end function fifo_type_dec;
 
     function srfifo_state (
         ien             : std_logic;
@@ -266,6 +251,68 @@ package body fifo_lib is
         end case;
         return tmp;
 	end srfifo_state;
+
+    function stack_state (
+        ien             : std_logic;
+        oen             : std_logic;
+        addr            : std_logic_vector;
+        current_state   : fifo_state_t
+    ) return fifo_state_t is
+        variable tmp         : fifo_state_t := steady_st;
+        variable delta       : unsigned(addr'range) := (others=>'0');
+        variable up          : std_logic             := '0';
+        variable dn          : std_logic             := '0';
+        variable keep        : std_logic             := '0';
+        variable fifo_length : integer               := 2**addr'length;
+    begin
+        tmp   := current_state;
+        delta := unsigned(addr);
+        up    := ien and not oen;
+        dn    := oen and not ien;
+        keep  := oen and ien;
+
+		case current_state is
+            when empty_st =>
+                if oen = '1' then
+                    tmp := underflow_st;
+                elsif up = '1' then
+                    tmp:= goempty_st;
+                end if;
+
+            when goempty_st =>
+                if delta = 1 and dn  = '1' then
+                    tmp := empty_st;
+                elsif delta = fifo_length/4+1 then
+                    tmp:= steady_st;
+                end if;
+
+            when steady_st =>
+                if delta = fifo_length/4 then
+                    tmp := goempty_st;
+                elsif delta = 3*fifo_length/4+1 then
+                    tmp:= gofull_st;
+                end if;
+
+            when gofull_st =>
+                if delta = 0 and up = '1' then
+                    tmp:= full_st;
+                elsif delta = 3*fifo_length/4 then
+                    tmp :=  steady_st;
+                end if;
+
+            when full_st =>
+                if up = '1' then
+                    tmp :=  overflow_st;
+                elsif dn = '1' then
+                    tmp := gofull_st;
+                end if;
+
+            when others =>
+                tmp := empty_st;
+
+        end case;
+        return tmp;
+	end stack_state;
 
     function sync_state (
         ien : std_logic; oen : std_logic; iaddr : std_logic_vector; oaddr : std_logic_vector; current_state : fifo_state_t

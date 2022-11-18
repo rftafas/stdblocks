@@ -25,7 +25,7 @@ library stdblocks;
 
 entity stdfifo2ck is
     generic (
-        ram_type  : fifo_t   := blockram;
+        ram_type  : string   := "auto";
         fifo_size : positive := 8;
         port_size : positive := 8
     );
@@ -100,7 +100,6 @@ begin
     end process;
 
     ram_oe_en       <=  '1'     when output_fifo_mq = load_output_st   else
-                        --'1'     when output_fifo_mq = load_output_st   else
                         enb_i;
 
     addro_cnt_en    <=  '1'     when output_fifo_mq = load_output_st   else
@@ -112,7 +111,7 @@ begin
 
     dp_ram_i : dp_ram
         generic map (
-            ram_type  => fifo_type_dec(ram_type),
+            ram_type  => ram_type,
             mem_size  => fifo_size,
             port_size => port_size
         )

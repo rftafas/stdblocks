@@ -74,23 +74,13 @@ architecture behavioral of fifo_lib_tb is
         end loop;
     end procedure;
 
-    procedure wait_or_timeout( condition : in boolean; time_out : in time; tag : in string ) is
-        variable starting_time : time := now;
+    procedure wait_until( condition : in boolean ) is
     begin
-        wait until (condition or now = starting_time+time_out);
-        if not condition then
-            assert false report "Condition on tag name: " & tag & " has timed out." severity failure;
-        end if;
+        loop
+            exit when condition;
+            wait for 100 ps;
+        end loop;
     end procedure;
-
-    function slowest( a : time; b : time ) return time is
-    begin
-        if a >= b then
-            return a;
-        else
-            return b;
-        end if;
-    end function;
 
     signal write_flag    : boolean := false;
     signal read_flag     : boolean := false;
@@ -144,7 +134,7 @@ begin
             elsif run("Isolated Write test") then
                 wdata_v := all_1(port_size);
                 fifo_vci.write(net,wdata_v);
-                wait until fifo_status_o.empty = '0';
+                wait until (fifo_status_b_o.empty = '0');
                 wait_cycles(clkb_i,3);
                 check_equal(fifo_status_b_o.empty,'0',result("Error: Empty (b) not detected."));
 
@@ -200,23 +190,20 @@ begin
             elsif run("Single Write/Read") then
                 wdata_v := all_1(port_size);
                 fifo_vci.write(net,wdata_v);
-                wait until fifo_status_b_o.empty = '0';
+                wait until (fifo_status_b_o.empty = '0');
                 fifo_vci.read(net,rdata_v);
                 check_equal(rdata_v,wdata_v,result("Wrong read value detected."));
-                --wait until fifo_status_b_o.empty = '1';
-                loop
-                    exit when fifo_status_b_o.empty = '1';
-                    wait for 10 ps;
-                end loop;
+                wait until (fifo_status_b_o.empty = '1');
+                wait for 10 ns;
                 check_true(true, result("Single Write/Read finished."));
 
             elsif run("Full Block Write/Read") then
-                for j in 0 to 2**(fifo_size) loop
+                for j in 0 to 2**(fifo_size-1) loop
                     wdata_v := to_std_logic_vector(j,wdata_v'length);
                     fifo_vci.write(net,wdata_v);
                 end loop;
                 wait until rising_edge(clkb_i);
-                for j in 0 to 2**(fifo_size) loop
+                for j in 0 to 2**(fifo_size-1) loop
                     fifo_vci.read(net,rdata_v);
                     check_equal(rdata_v,to_std_logic_vector(j,rdata_v'length),result("Error: wrong data received."));
                 end loop;
@@ -286,13 +273,7 @@ begin
             elsif run("Empty Run") then
                 write_flag <= true;
                 for j in 0 to 2**(fifo_size+2)-1 loop
-                    loop
-                        if fifo_status_o.goempty = '1' or fifo_status_o.steady = '1' then
-                            wait until rising_edge(clka_i);
-                        else
-                            exit;
-                        end if;
-                    end loop;
+                    wait until fifo_status_o.empty = '1' and rising_edge(clka_i);
                     wdata_v := to_std_logic_vector(j,wdata_v'length);
                     fifo_vci.write(net,wdata_v);
                 end loop;
@@ -378,11 +359,10 @@ begin
             wait until fifo_status_b_o.empty = '0';
             loop
                 if fifo_status_b_o.empty = '0' then
+                    info(to_string(counter_v));
                     fifo_vci.read(net,rdata_v);
                     check_equal(to_integer(rdata_v),counter_v,result("Error: incorrect value read."));
                     counter_v := counter_v + 1;
-                else
-                    wait until rising_edge(clkb_i);
                 end if;
                 if counter_v = 2**(fifo_size+2) then
                     read_flag <= true;
@@ -444,13 +424,8 @@ begin
             --         datab_o       => datab_o,
             --         ena_i         => ena_i,
             --         enb_i         => enb_i,
-            --         pointera_i    => ,
             --         pointera_o    => ,
-            --         pointera_en_i => ,
-            --         pointerb_i    => ,
-            --         pointerb_o    => ,
-            --         pointerb_en_i => ,
-            --         fifo_status_o =>
+            --         pointerb_o    =>
             --     );
 
         when string_padding("srfifo1ck",256) =>
@@ -474,7 +449,7 @@ begin
         when string_padding("stdfifo1ck",256) =>
             stdfifo1ck_i : stdfifo1ck
                 generic map (
-                    ram_type  => blockram,
+                    ram_type  => "auto",
                     fifo_size => fifo_size,
                     port_size => port_size
                 )
@@ -493,7 +468,7 @@ begin
         when string_padding("stdfifo2ck",256) =>
             stdfifo2ck_i : stdfifo2ck
                 generic map (
-                    ram_type  => blockram,
+                    ram_type  => "auto",
                     fifo_size => fifo_size,
                     port_size => port_size
                 )
@@ -509,27 +484,6 @@ begin
                     fifo_status_a_o => fifo_status_o,
                     fifo_status_b_o => fifo_status_b_o
                 );
-
-        when string_padding("stack",256) =>
-            stack_i : stack
-                generic map (
-                    ram_type   => blockram,
-                    stack_size => fifo_size,
-                    port_size  => port_size
-                )
-                port map(
-                    clk_i    => clka_i,
-                    rst_i    => rsta_i,
-                    dataa_i  => dataa_i,
-                    wen_i    => ena_i,
-                    dataa_o  => datab_o,
-                    ren_i    => enb_i,
-                    addrb_i  => addr_s,
-                    datab_o  => stack_data_s,
-                    stack_status_o => fifo_status_o
-                );
-
-            fifo_status_b_o <= fifo_status_o;
 
         when others =>
             assert false

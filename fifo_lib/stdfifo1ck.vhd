@@ -24,7 +24,7 @@ library stdblocks;
 
 entity stdfifo1ck is
     generic (
-      ram_type  : fifo_t   := blockram;
+      ram_type  : string   := "auto";
       fifo_size : positive := 8;
       port_size : positive := 8
     );
@@ -110,7 +110,7 @@ begin
 
   dp_ram_u : dp_ram
     generic map (
-      ram_type  => fifo_type_dec(ram_type),
+      ram_type  => ram_type,
       mem_size  => fifo_size,
       port_size => port_size
     )
