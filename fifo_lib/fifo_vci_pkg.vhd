@@ -35,6 +35,13 @@ package fifo_vci_pkg is
     constant start_cmd      : msg_type_t := new_msg_type("start cmd");
     constant reset_cmd      : msg_type_t := new_msg_type("start cmd");
 
+    type fifo_master_t is record
+        -- These fields are private, do not use directly
+        p_actor : actor_t;
+        p_data_length : natural;
+        p_logger : logger_t;
+    end record;
+
     type fifo_vci_t is protected
         procedure write      ( signal net : inout network_t; data : in  std_logic_vector);
         procedure read       ( signal net : inout network_t; data : out std_logic_vector);
@@ -69,8 +76,6 @@ package fifo_vci_pkg is
         signal en     : out std_logic;
         signal data_s : in  std_logic_vector
     );
-
-    procedure wait_for ( constant period : time );
 
 end package;
 
@@ -183,7 +188,7 @@ package body fifo_vci_pkg is
     begin
         en     <= '1';
         data_s <= data_v;
-        wait until en = '1' and rising_edge(clk);
+        wait until en = '1' and data_s = data_v and rising_edge(clk);
     end procedure;
 
     procedure fifo_read_signals (
@@ -196,12 +201,6 @@ package body fifo_vci_pkg is
         en <= '1';
         wait until en = '1' and rising_edge(clk);
         data_v := data_s;
-        wait until data_v = data_s;
-    end procedure;
-
-    procedure wait_for ( constant period : time ) is
-    begin
-      wait for period;
     end procedure;
 
 end package body;

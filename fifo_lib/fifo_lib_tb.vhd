@@ -356,14 +356,11 @@ begin
             end loop;
 
         elsif running_test_case = "Empty Run" then
-            wait until fifo_status_b_o.empty = '0';
             loop
-                if fifo_status_b_o.empty = '0' then
-                    info(to_string(counter_v));
-                    fifo_vci.read(net,rdata_v);
-                    check_equal(to_integer(rdata_v),counter_v,result("Error: incorrect value read."));
-                    counter_v := counter_v + 1;
-                end if;
+                wait until fifo_status_b_o.empty = '0' and rising_edge(clkb_i);
+                fifo_vci.read(net,rdata_v);
+                check_equal(to_integer(rdata_v),counter_v,result("Error: incorrect value read."));
+                counter_v := counter_v + 1;
                 if counter_v = 2**(fifo_size+2) then
                     read_flag <= true;
                     info("Aux: Read Complete.");
