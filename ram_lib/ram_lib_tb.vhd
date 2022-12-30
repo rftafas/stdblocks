@@ -32,7 +32,8 @@ entity ram_lib_tb is
     entity_sel      : string;
     port_size       : positive  := 8;
     addr_size       : positive  := 8;
-    fall_through    : boolean
+    fall_through    : boolean;
+    run_time        : integer
 );
 end entity;
 

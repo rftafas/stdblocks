@@ -107,8 +107,9 @@ test_tb.add_config(
     )
 )
 
+#must use relaxed flag due to shared variable problem in VHDL2008/1993 conflict and how
+#the different synthesizers understand it.
 if "ghdl" in vu.get_simulator_name():
     vu.set_sim_option("ghdl.elab_flags",["-frelaxed"])
-    vu.set_sim_option("ghdl.sim_flags",["-frelaxed"])
 
 vu.main()
