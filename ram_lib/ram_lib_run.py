@@ -12,6 +12,7 @@ except:
 root = dirname(__file__)
 
 vu = VUnit.from_argv()
+
 vu.add_verification_components()
 vu.add_com()
 
@@ -22,12 +23,23 @@ stdblocks = vu.add_library("stdblocks")
 stdblocks_filelist = glob.glob("../sync_lib/*.vhd")
 for vhd_file in stdblocks_filelist:
     if "_tb" not in vhd_file:
-        stdblocks.add_source_files(vhd_file)
+        stdblocks.add_source_file(vhd_file)
 
+# stdblocks_filelist = glob.glob("./*.vhd")
+# for vhd_file in stdblocks_filelist:
+#     if "tdp" not in vhd_file:
+#         stdblocks.add_source_file(vhd_file)
+#     else:
+#         stdblocks.add_source_file(vhd_file,vhdl_standard="1993")
 stdblocks.add_source_files(join(root, "./*.vhd"))
+
+#must use relaxed flag due to shared variable problem in VHDL2008/1993 conflict and how
+#the different synthesizers understand it.
+if "ghdl" in vu.get_simulator_name():
+    vu.set_compile_option("ghdl.a_flags",["-frelaxed"])
+
 test_tb = stdblocks.entity("ram_lib_tb")
 test_tb.scan_tests_from_file(join(root, "ram_lib_tb.vhd"))
-
 
 test_tb.add_config(
     name = "dp_ram",
@@ -95,5 +107,8 @@ test_tb.add_config(
     )
 )
 
+if "ghdl" in vu.get_simulator_name():
+    vu.set_sim_option("ghdl.elab_flags",["-frelaxed"])
+    vu.set_sim_option("ghdl.sim_flags",["-frelaxed"])
 
 vu.main()

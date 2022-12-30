@@ -43,7 +43,7 @@ architecture behavioral of pulse_align is
   ) is
     variable tmp : align_t;
   begin
-    for j in en_i'range loop
+    for j in fsm_mq'range loop
       tmp := fsm_mq(j);
       case tmp is
           when idle        =>
@@ -53,8 +53,8 @@ architecture behavioral of pulse_align is
 
         when wait_others =>
           tmp := active;
-          for j in fsm_mq'range loop
-            if fsm_mq(j) /= wait_others then
+          for k in fsm_mq'range loop
+            if fsm_mq(k) /= wait_others then
               tmp :=  wait_others;
             end if;
           end loop;
@@ -70,9 +70,9 @@ architecture behavioral of pulse_align is
   end procedure;
 
   function decode_out( fsm_mq : fsm_vector_t ) return std_logic_vector is
-    variable tmp : std_logic_vector(en_i'range);
+    variable tmp : std_logic_vector(fsm_mq'range);
     begin
-      for j in en_i'range loop
+      for j in fsm_mq'range loop
         if fsm_mq(j) = active then
           tmp(j) := '1';
         else

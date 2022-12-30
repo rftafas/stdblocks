@@ -22,16 +22,17 @@ library vunit_lib;
 
 entity sync_lib_tb is
   generic (
-		runner_cfg : string;
+		runner_cfg : string--;
 		-- entity_sel : string;
-    run_time   : integer --;
+    -- run_time   : integer --;
     -- period     : integer
 	);
 end sync_lib_tb;
 
 architecture behavioral of sync_lib_tb is
 
-  constant run_time_c    : time := run_time * 1 us;
+  constant run_time   : integer := 600;
+  constant run_time_c : time    := run_time * 1 us;
 
   signal rst_i     : std_logic;
   signal mclk_i    : std_logic := '1';
@@ -62,7 +63,7 @@ begin
 
     while test_suite loop
       if run("Free running simulation") then
-        report "Will run for " & to_string(run_time_c);
+        report("Will run for " & to_string(run_time_c));
         wait for run_time_c;
         check_true(true, result("Free running finished."));
 
